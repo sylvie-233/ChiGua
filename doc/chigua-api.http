@@ -1,0 +1,119 @@
+@baseUrl = http://localhost:8080
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3NzU5ODA5NjYsIm5iZiI6MTc3NTg5NDU2NiwiaWF0IjoxNzc1ODk0NTY2fQ.4xAIKM8k5Pth3lRFE8iUGzza90t6MbYzSFSCK65UWWo
+### Ping
+GET {{baseUrl}}/api/ping
+
+### 用户注册
+POST {{baseUrl}}/api/users/register
+Content-Type: application/json
+
+{
+  "username": "tt",
+  "password": "123456",
+  "nickname": "游客tt"
+}
+
+### 用户登录
+POST {{baseUrl}}/api/users/login
+Content-Type: application/json
+
+{
+  "username": "tt",
+  "password": "123456"
+}
+
+### 当前用户信息
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{token}}
+
+
+### 创建文章
+POST {{baseUrl}}/api/articles
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "第二篇文章",
+  "content": "内容",
+  "coverImage": "https://xx.com/a.jpg",
+  "categoryId": 1,
+  "tagIds": [2]
+}
+
+### 文章列表
+GET {{baseUrl}}/api/articles?page=1&pageSize=10
+
+### 文章详情
+GET {{baseUrl}}/api/articles/1
+
+### 更新文章
+PUT {{baseUrl}}/api/articles/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "新标题",
+  "content": "新内容"
+}
+
+### 删除文章
+DELETE {{baseUrl}}/api/articles/1
+Authorization: Bearer {{token}}
+
+### 发布文章
+POST {{baseUrl}}/api/articles/1/publish
+Authorization: Bearer {{token}}
+
+
+### 评论
+POST {{baseUrl}}/api/comments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "articleId": 1,
+  "parentId": 0,
+  "replyUserId": null,
+  "content": "不错"
+}
+
+### 文章评论
+GET {{baseUrl}}/api/comments/article/1
+
+### 删除评论
+DELETE {{baseUrl}}/api/comments/1
+Authorization: Bearer {{token}}
+
+
+### 分类
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "科技"
+}
+
+### 获取分类列表
+GET {{baseUrl}}/api/categories
+
+### 删除分类
+DELETE {{baseUrl}}/api/categories/2
+Authorization: Bearer {{token}}
+
+
+### 标签
+POST {{baseUrl}}/api/tags
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "AI"
+}
+
+### 获取标签列表
+GET {{baseUrl}}/api/tags
+
+### 删除标签
+DELETE {{baseUrl}}/api/tags/1
+Authorization: Bearer {{token}}

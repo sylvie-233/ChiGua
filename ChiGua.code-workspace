@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "./chigua-backend"
+		},
+		{
+			"path": "./"
 		}
 	],
 	"settings": {}

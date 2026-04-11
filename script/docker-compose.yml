@@ -1,0 +1,51 @@
+version: "3.9"
+
+name: chigua
+
+services:
+  postgres:
+    image: postgres:18
+    container_name: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: sylvie233
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: chigua
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./init:/docker-entrypoint-initdb.d
+    networks:
+      - chigua-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sylvie233 -d chigua"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: ../chigua-backend
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes: 
+      - backend-logs:/app/logs
+    networks:
+      - chigua-net
+
+volumes:
+  pgdata:
+    driver: local
+  backend-logs:
+    driver: local
+
+networks:
+  chigua-net:
+    driver: bridge

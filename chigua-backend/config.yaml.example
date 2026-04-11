@@ -1,0 +1,34 @@
+# 服务器配置
+server:
+  # 服务器端口
+  port: 8080
+  # Gin模式: debug, release, test
+  mode: debug
+  # 读取超时时间(秒)
+  read_timeout: 10
+  # 写入超时时间(秒)
+  write_timeout: 10
+  # jwt密钥
+  secret: chigua-secret-key
+
+# 数据库配置
+database:
+  # 数据库主机
+  host: localhost
+  # 数据库端口
+  port: 5432
+  # 数据库用户
+  user: postgres
+  # 数据库密码
+  password: postgres
+  # 数据库名称
+  dbname: chigua
+  # SSL模式: disable, require, verify-ca, verify-full
+  sslmode: disable
+
+# 日志配置
+logger:
+  # 日志级别: debug, info, warn, error
+  level: info
+  # 日志文件路径
+  log_file: logs/app.log

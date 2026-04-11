@@ -11,7 +11,7 @@
           "driverFiles": "mysql-connector-j-8.3.0.jar",
           "jdbcReferDriver": "com.mysql.cj.jdbc.Driver",
           "jdbcReferUrl": "jdbc:mysql://[ip]:[port]/[dbname]?characterEncoding=UTF-8&useSSL=false&useUnicode=true&serverTimezone=UTC",
-          "tableCreate": "{{\r\n    let schemaName = it.schemaName ? `${it.schemaName}.` : '';\r\n    const tableKey = `${schemaName}${it.defKey}`;\r\n\r\n    function getDataType(field) {\r\n        const { dbDataType } = field;\r\n        if(!dbDataType) {\r\n            return '';\r\n        }\r\n        const dataType = dbDataType.toUpperCase();\r\n        if (['VARCHAR','NVARCHAR','VARBINARY'].includes(dataType)) {\r\n            return `${dataType}(${field.dataLen ? field.dataLen : 128})`;\r\n        } else if (['DATE','YEAR','TINYTEXT','MEDIUMTEXT','LONGTEXT','TINYBLOB','MEDIUMBLOB','LONGBLOB','BOOLEAN','FLOAT','JSON'].includes(dataType)) {\r\n            return dataType;\r\n        } else if(['SET','ENUM'].includes(dataType)){\r\n            return `${dataType}(${field.defaultValue})`;\r\n        } else if (dataType === 'TIMESTAMP') {\r\n            return field.dataLen && field.dataLen >= 0 && field.dataLen <= 6 ? `${dataType}(${field.dataLen})` : dataType;\r\n        } else if (dataType === 'DOUBLE') {\r\n           return field.dataLen && field.dataLen >= 0 && field.dataLen <= 255 ? (field.numScale && field.numScale >= 0 && field.numScale <= field.dataLen ? `${dataType}(${field.dataLen},${field.numScale})`  : `${dataType}(${field.dataLen},0)`) : `${dataType}`;\r\n        } else if (dataType === 'DECIMAL') {\r\n            return field.dataLen && field.dataLen >= 0 && field.dataLen <= 65 ? (field.numScale && field.numScale >= 0 && field.numScale <= field.dataLen ? `${dataType}(${field.dataLen},${field.numScale})`  : `${dataType}(${field.dataLen})`) : `${dataType}`;\r\n        } else {\r\n            return field.dataLen && field.dataLen >= 0 ? `${dataType}(${field.dataLen})` : `${dataType}`;\r\n        }\r\n    }\r\n\r\n    function getFieldDefinition(field, index, fields) {\r\n        const dataType = getDataType(field);\r\n        const notNull = field.notNull ? ' NOT NULL' : '';\r\n        const autoIncrement = field.autoIncrement ? ' AUTO_INCREMENT' : '';\r\n        let defaultValue = field.defaultValue ? ` DEFAULT ${field.defaultValue}` : '';\r\n        if(field?.dbDataType?.toUpperCase() === 'SET' || field?.dbDataType?.toUpperCase() ==='ENUM'){\r\n            defaultValue = field.defaultValue ? ` DEFAULT (\"${field.defaultValue}\")` : '';\r\n        }\r\n        const comment = ` COMMENT '${it.func.strJoin(field.defName, field.intro, \";\", true)}'`;\r\n        return `${dataType}${notNull}${autoIncrement}${defaultValue}${comment}${index < fields.length - 1 || pkList.length > 0 ? ',' : ''}`;\r\n    }\r\n}}\r\nDROP TABLE IF EXISTS {{= tableKey }};\r\n\r\nCREATE TABLE {{= tableKey }}(\r\n{{ pkList = [] ; }}\r\n{{~it.fields:field:index}}\r\n    {{? field.primaryKey }}{{ pkList.push(field.defKey) }}{{?}}\r\n    `{{=field.defKey}}` {{= getFieldDefinition(field, index, it.fields) }}\r\n{{~}}\r\n{{? pkList.length > 0 }}\r\n    PRIMARY KEY ({{~pkList:pkName:i}}`{{= pkName }}`{{= i < pkList.length - 1 ? ',' : '' }}{{~}})\r\n{{?}}\r\n){{? (it.intro && it.intro !== '') || (it.defName && it.defName !== '') }} COMMENT '{{=it.func.strJoin(it.defName, it.intro, \";\", true)}}'{{?}};\r\n$blankline\r\n",
+          "tableCreate": "{{\r\n    let schemaName = it.schemaName ? `${it.schemaName}.` : '';\r\n    const tableKey = `${schemaName}${it.defKey.startsWith(\"t_\") ? it.defKey.slice(2) : it.defKey}`;\r\n\r\n    function getDataType(field) {\r\n        const { dbDataType } = field;\r\n        if(!dbDataType) {\r\n            return '';\r\n        }\r\n        const dataType = dbDataType.toUpperCase();\r\n        if (['VARCHAR','NVARCHAR','VARBINARY'].includes(dataType)) {\r\n            return `${dataType}(${field.dataLen ? field.dataLen : 128})`;\r\n        } else if (['DATE','YEAR','TINYTEXT','MEDIUMTEXT','LONGTEXT','TINYBLOB','MEDIUMBLOB','LONGBLOB','BOOLEAN','FLOAT','JSON'].includes(dataType)) {\r\n            return dataType;\r\n        } else if(['SET','ENUM'].includes(dataType)){\r\n            return `${dataType}(${field.defaultValue})`;\r\n        } else if (dataType === 'TIMESTAMP') {\r\n            return field.dataLen && field.dataLen >= 0 && field.dataLen <= 6 ? `${dataType}(${field.dataLen})` : dataType;\r\n        } else if (dataType === 'DOUBLE') {\r\n           return field.dataLen && field.dataLen >= 0 && field.dataLen <= 255 ? (field.numScale && field.numScale >= 0 && field.numScale <= field.dataLen ? `${dataType}(${field.dataLen},${field.numScale})`  : `${dataType}(${field.dataLen},0)`) : `${dataType}`;\r\n        } else if (dataType === 'DECIMAL') {\r\n            return field.dataLen && field.dataLen >= 0 && field.dataLen <= 65 ? (field.numScale && field.numScale >= 0 && field.numScale <= field.dataLen ? `${dataType}(${field.dataLen},${field.numScale})`  : `${dataType}(${field.dataLen})`) : `${dataType}`;\r\n        } else {\r\n            return field.dataLen && field.dataLen >= 0 ? `${dataType}(${field.dataLen})` : `${dataType}`;\r\n        }\r\n    }\r\n\r\n    function getFieldDefinition(field, index, fields) {\r\n        const dataType = getDataType(field);\r\n        const notNull = field.notNull ? ' NOT NULL' : '';\r\n        const autoIncrement = field.autoIncrement ? ' AUTO_INCREMENT' : '';\r\n        let defaultValue = field.defaultValue ? ` DEFAULT ${field.defaultValue}` : '';\r\n        if(field?.dbDataType?.toUpperCase() === 'SET' || field?.dbDataType?.toUpperCase() ==='ENUM'){\r\n            defaultValue = field.defaultValue ? ` DEFAULT (\"${field.defaultValue}\")` : '';\r\n        }\r\n        const comment = ` COMMENT '${it.func.strJoin(field.defName, field.intro, \";\", true)}'`;\r\n        return `${dataType}${notNull}${autoIncrement}${defaultValue}${comment}${index < fields.length - 1 || pkList.length > 0 ? ',' : ''}`;\r\n    }\r\n}}\r\nDROP TABLE IF EXISTS {{= tableKey }};\r\n\r\nCREATE TABLE {{= tableKey }} (\r\n{{ pkList = [] ; }}\r\n{{~it.fields:field:index}}\r\n    {{? field.primaryKey }}{{ pkList.push(field.defKey) }}{{?}}\r\n    `{{=field.defKey}}` {{= getFieldDefinition(field, index, it.fields) }}\r\n{{~}}\r\n{{? pkList.length > 0 }}\r\n    PRIMARY KEY ({{~pkList:pkName:i}}`{{= pkName }}`{{= i < pkList.length - 1 ? ',' : '' }}{{~}})\r\n{{?}}\r\n){{? (it.intro && it.intro !== '') || (it.defName && it.defName !== '') }} COMMENT '{{=it.func.strJoin(it.defName, it.intro, \";\", true)}}'{{?}};\r\n$blankline\r\n",
           "tableUpdate": "{{\n    let defKey = it.baseUpdate.next.defKey||'';\n    let defName = it.baseUpdate.next.defName||'';\n    let intro = it.baseUpdate.next.intro;\n    let indexFields = it.indexFields;\n    let isPrimaryKeyModified = it.isPrimaryKeyModified;\n    let schemaName = it.schemaName ? `${it.schemaName}.` : '';\n    const tableKey = `${schemaName}${it.defKey}`;\n    const updateKeys = it?.baseUpdate?.updateKeys?.split(\",\") || [];\n}}\n{{? isPrimaryKeyModified }}\nALTER TABLE {{= tableKey }} DROP PRIMARY KEY;\n{{? indexFields && indexFields.length > 0}}\nALTER TABLE {{= tableKey }} ADD PRIMARY KEY ({{~indexFields:field:i}}`{{= field.defKey }}`{{= i < indexFields.length-1 ? ',' : '' }}{{~}});\n{{?}}\n{{?}}\n{{? updateKeys.some((item) => item === 'defName' || item === 'intro') }}ALTER TABLE {{= tableKey }} COMMENT '{{=it.func.strJoin(defName, intro, \";\", true)}}'; {{?}}\n{{? updateKeys.some((item) => item === 'defKey') }}ALTER TABLE {{= schemaName }}{{=it.defKey}} RENAME TO {{= schemaName }}{{=defKey}};{{?}}\n",
           "tableDelete": "{{\n    let schemaName = it.schemaName ? `${it.schemaName}.` : '';\n    const tableKey = `${schemaName}${it.defKey}`;\n}}\nDROP TABLE IF EXISTS {{= tableKey }};",
           "columnCreate": "{{\r\n    let fieldsUpdate = it.fieldsUpdate;\r\n    const computeLenAndNum = (dataLen, numScale, maxDataLen, maxNumScale) => {\r\n        if(!dataLen || dataLen <= 0) {\r\n            return '';\r\n        }\r\n        let currentDataLen = dataLen, currentNumScale = numScale;\r\n        if(dataLen >= maxDataLen) {\r\n            currentDataLen = maxDataLen;\r\n        }\r\n        if(!numScale || numScale <= 0) {\r\n            return `(${currentDataLen},0)`;\r\n        }\r\n        if(currentNumScale > maxNumScale) {\r\n            currentNumScale = maxNumScale\r\n        }\r\n        if(currentNumScale > currentDataLen && currentDataLen <= maxNumScale) {\r\n            currentNumScale = currentDataLen;\r\n        }\r\n        return `(${currentDataLen},${currentNumScale})`;\r\n    };\r\n    const computeDefaultValue = (field) => {\r\n        const { defaultValue, dbDataType, primaryKey } = field;\r\n        if(!defaultValue) {\r\n            return '';\r\n        }\r\n        if(dbDataType.toUpperCase().endsWith('BLOB') || \r\n            dbDataType.toUpperCase().endsWith('GEOMETRY') || \r\n            dbDataType.toUpperCase().endsWith('TEXT') || \r\n            dbDataType.toUpperCase().endsWith('JSON')) {\r\n            return '';\r\n        } else if(dbDataType.toUpperCase() === 'ENUM' ||\r\n            dbDataType.toUpperCase() === 'SET') {\r\n            return ` DEFAULT \"${defaultValue}\"`;\r\n        } else {\r\n            return ` DEFAULT ${defaultValue}`;\r\n        }\r\n    };\r\n    const computeDatatype = (field) => {\r\n        const { dbDataType, dataLen, numScale, defaultValue } = field;\r\n        if(!dbDataType) {\r\n            return '';\r\n        }\r\n        if(dbDataType.toUpperCase() === 'VARCHAR' ||\r\n            dbDataType.toUpperCase() === 'NVARCHAR' ||\r\n            dbDataType.toUpperCase() === 'VARBINARY') {\r\n            return `${dbDataType}(${dataLen ? dataLen : 128})`;\r\n        } else if(dbDataType.toUpperCase() === 'DATE' ||\r\n            dbDataType.toUpperCase() === 'YEAR' ||\r\n            dbDataType.toUpperCase() === 'TINYTEXT' ||\r\n            dbDataType.toUpperCase() === 'MEDIUMTEXT' ||\r\n            dbDataType.toUpperCase() === 'LONGTEXT' ||\r\n            dbDataType.toUpperCase() === 'TINYBLOB' ||\r\n            dbDataType.toUpperCase() === 'MEDIUMBLOB' ||\r\n            dbDataType.toUpperCase() === 'LONGBLOB' ||\r\n            dbDataType.toUpperCase() === 'BOOLEAN' ||\r\n            dbDataType.toUpperCase() === 'FLOAT' ||\r\n            dbDataType.toUpperCase() === 'INT' ||\r\n            dbDataType.toUpperCase() === 'JSON' ) {\r\n            return dbDataType;\r\n        } else if(dbDataType.toUpperCase() === 'ENUM' ||\r\n            dbDataType.toUpperCase() === 'SET' ) {\r\n            return `${dbDataType}(${defaultValue})`;\r\n        } else if(dbDataType.toUpperCase() === 'TIME' ||\r\n            dbDataType.toUpperCase() === 'DATETIME' ||\r\n            dbDataType.toUpperCase() === 'TIMESTAMP') {\r\n            return `${dbDataType}${(dataLen && dataLen >= 0 && dataLen <= 6) ? `(${dataLen})` : ''}`;\r\n        } else if(dbDataType.toUpperCase() === 'DOUBLE') {\r\n            return `${dbDataType}${computeLenAndNum(dataLen, numScale, 255, 30)}`;\r\n        } else if(dbDataType.toUpperCase() === 'DECIMAL') {\r\n            return `${dbDataType}${computeLenAndNum(dataLen, numScale, 65, 30)}`;\r\n        } else if(dataLen && dataLen > 0) {\r\n            return `${dbDataType}(${dataLen})`;\r\n        }\r\n        return `${dbDataType}`;\r\n    };\r\n    let schemaName = it.schemaName ? `${it.schemaName}.` : '';\r\n    const tableKey = `${schemaName}${it.defKey}`;\r\n}}\r\n{{~fieldsUpdate:field:index}}\r\nALTER TABLE {{= tableKey }} ADD COLUMN `{{=field.defKey}}` {{=computeDatatype(field)}} {{= field.notNull ? 'NOT NULL' : '' }}{{= field.autoIncrement ? ' AUTO_INCREMENT ' : '' }}{{= computeDefaultValue(field)}} {{? field.defName || field.intro }} COMMENT '{{=it.func.strJoin(field.defName, field.intro, \";\", true)}}'{{?}};\r\n{{~}}\r\n",
@@ -37,7 +37,7 @@
           "driverFiles": "postgresql-42.7.3.jar",
           "jdbcReferDriver": "org.postgresql.Driver",
           "jdbcReferUrl": "jdbc:postgresql://[ip]:[port]/[dbname]",
-          "tableCreate": "{{\r\n    let schemaName = it.schemaName ? `${it.schemaName}.` : '';\r\n    const tableKey = `${schemaName}${it.defKey}`;\r\n\r\n    const dataTypeArray = [\r\n        'INT2',\r\n        'INT4',\r\n        'INT',\r\n        'INT8',\r\n        'SERIAL2',\r\n        'SERIAL4',\r\n        'SERIAL8',\r\n        'FLOAT4',\r\n        'FLOAT8',\r\n        'MONEY',\r\n        'TEXT',\r\n        'BYTEA',\r\n        'BOOLEAN',\r\n        'JSONB',\r\n        'JSON',\r\n        'DATE'\r\n    ];\r\n\r\n    function getDataType(field) {\r\n        const { dbDataType, dataLen, numScale, defaultValue, autoIncrement } = field;\r\n        if(!dbDataType) {\r\n            return '';\r\n        }\r\n        if(autoIncrement) {\r\n            return dbDataType.toUpperCase() === 'INT8' ? 'BIGSERIAL' : 'SERIAL';\r\n        }\r\n        if(dataTypeArray.includes(dbDataType.toUpperCase())) {\r\n            return dbDataType;\r\n        }\r\n        if(dbDataType.toUpperCase() === 'DECIMAL') {\r\n            if(dataLen && dataLen >= 1 && dataLen <= 1000) {\r\n                if(numScale && numScale >= 0 && numScale <= dataLen) {\r\n                    return `${dbDataType}(${dataLen},${numScale})`;\r\n                } else {\r\n                    return `${dbDataType}(${dataLen})`;\r\n                }\r\n            }\r\n            return dbDataType;\r\n        }\r\n        if(dataLen && dataLen >= 0) {\r\n            return `${dbDataType}(${dataLen})`;\r\n        }\r\n        return dbDataType;\r\n    }\r\n\r\n    function getConstraints(field) {\r\n        let constraints = '';\r\n        if (field.notNull) {\r\n            constraints += ' NOT NULL';\r\n        }\r\n        if (field.defaultValue) {\r\n            constraints += ` DEFAULT ${field.defaultValue}`;\r\n        }\r\n        return constraints;\r\n    }\r\n}}\r\n\r\nDROP TABLE IF EXISTS {{= tableKey }};\r\n\r\nCREATE TABLE {{= tableKey }}(\r\n{{ pkList = [] ; }}\r\n{{~it.fields:field:index}}\r\n    {{? field.primaryKey }}{{ pkList.push(field.defKey) }}{{?}}{{=field.defKey}} {{= getDataType(field) }}{{= getConstraints(field) }}{{= index < it.fields.length-1 || pkList.length>0 ? ',' : '' }}\r\n{{~}}\r\n{{? pkList.length > 0 }}    PRIMARY KEY ({{= pkList.join(',')}}){{?}}\r\n);\r\n\r\n{{~it.fields:field:index}}\r\n{{? field.defName || field.intro }}\r\nCOMMENT ON COLUMN {{= tableKey }}.{{=field.defKey}} IS '{{=it.func.strJoin(field.defName, field.intro, \";\", true)}}';\r\n{{?}}\r\n{{~}}\r\n\r\n{{? it.defName || it.intro }}\r\nCOMMENT ON TABLE {{= tableKey }} IS '{{=it.func.strJoin(it.defName, it.intro, \";\", true)}}';\r\n{{?}}\r\n$blankline",
+          "tableCreate": "{{\r\n    let schemaName = it.schemaName ? `${it.schemaName}.` : '';\r\n    const tableKey = `${schemaName}${it.defKey.startsWith(\"t_\") ? it.defKey.slice(2) : it.defKey}`;\r\n\r\n    const dataTypeArray = [\r\n        'INT2',\r\n        'INT4',\r\n        'INT',\r\n        'INT8',\r\n        'SERIAL2',\r\n        'SERIAL4',\r\n        'SERIAL8',\r\n        'FLOAT4',\r\n        'FLOAT8',\r\n        'MONEY',\r\n        'TEXT',\r\n        'BYTEA',\r\n        'BOOLEAN',\r\n        'JSONB',\r\n        'JSON',\r\n        'DATE'\r\n    ];\r\n\r\n    function getDataType(field) {\r\n        const { dbDataType, dataLen, numScale, defaultValue, autoIncrement } = field;\r\n        if(!dbDataType) {\r\n            return '';\r\n        }\r\n        if(autoIncrement) {\r\n            return dbDataType.toUpperCase() === 'INT8' ? 'BIGSERIAL' : 'SERIAL';\r\n        }\r\n        if(dataTypeArray.includes(dbDataType.toUpperCase())) {\r\n            return dbDataType;\r\n        }\r\n        if(dbDataType.toUpperCase() === 'DECIMAL') {\r\n            if(dataLen && dataLen >= 1 && dataLen <= 1000) {\r\n                if(numScale && numScale >= 0 && numScale <= dataLen) {\r\n                    return `${dbDataType}(${dataLen},${numScale})`;\r\n                } else {\r\n                    return `${dbDataType}(${dataLen})`;\r\n                }\r\n            }\r\n            return dbDataType;\r\n        }\r\n        if(dataLen && dataLen >= 0) {\r\n            return `${dbDataType}(${dataLen})`;\r\n        }\r\n        return dbDataType;\r\n    }\r\n\r\n    function getConstraints(field) {\r\n        let constraints = '';\r\n        if (field.notNull) {\r\n            constraints += ' NOT NULL';\r\n        }\r\n        if (field.defaultValue) {\r\n            constraints += ` DEFAULT ${field.defaultValue}`;\r\n        }\r\n        return constraints;\r\n    }\r\n}}\r\n\r\nDROP TABLE IF EXISTS {{= tableKey }};\r\n\r\nCREATE TABLE {{= tableKey }} (\r\n{{ pkList = [] ; }}\r\n{{~it.fields:field:index}}\r\n    {{? field.primaryKey }}{{ pkList.push(field.defKey) }}{{?}}{{=field.defKey}} {{= getDataType(field) }}{{= getConstraints(field) }}{{= index < it.fields.length-1 || pkList.length>0 ? ',' : '' }}\r\n{{~}}\r\n{{? pkList.length > 0 }}    PRIMARY KEY ({{= pkList.join(',')}}){{?}}\r\n);\r\n\r\n{{~it.fields:field:index}}\r\n{{? field.defName || field.intro }}\r\nCOMMENT ON COLUMN {{= tableKey }}.{{=field.defKey}} IS '{{=it.func.strJoin(field.defName, field.intro, \";\", true)}}';\r\n{{?}}\r\n{{~}}\r\n\r\n{{? it.defName || it.intro }}\r\nCOMMENT ON TABLE {{= tableKey }} IS '{{=it.func.strJoin(it.defName, it.intro, \";\", true)}}';\r\n{{?}}\r\n$blankline",
           "tableUpdate": "{{\r\n    let defKey = it.baseUpdate.next.defKey;\r\n    let schemaName = it.schemaName ? `${it.schemaName}.` : '';\r\n    const tableKey = `${schemaName}${it.defKey}`;\r\n    let defName = it.baseUpdate.next.defName;\r\n    let intro = it.baseUpdate.next.intro;\r\n    let indexFields = it.indexFields;\r\n    let isPrimaryKeyModified = it.isPrimaryKeyModified;\r\n    const updateKeys = it?.baseUpdate?.updateKeys?.split(\",\") || [];\r\n}}\r\n{{? isPrimaryKeyModified }}\r\nDO $$\r\n    DECLARE\r\n        pk_constraint_name text;\r\n    BEGIN\r\n        SELECT constraint_name\r\n        INTO pk_constraint_name\r\n        FROM information_schema.table_constraints\r\n        WHERE table_name = '{{=it.defKey}}' AND constraint_type = 'PRIMARY KEY'\r\n        LIMIT 1;\r\n\r\n        IF pk_constraint_name IS NOT NULL THEN\r\n            EXECUTE 'ALTER TABLE {{= schemaName }}{{=it.defKey}} DROP CONSTRAINT ' || pk_constraint_name;\r\n        ELSE\r\n            RAISE NOTICE 'No primary key constraint found for the table.';\r\n        END IF;\r\nEND $$;\r\n{{? indexFields && indexFields.length > 0}}\r\nALTER TABLE {{= tableKey }} ADD PRIMARY KEY ({{~indexFields:field:i}}\"{{= field.defKey }}\"{{= i < indexFields.length-1 ? ',' : '' }}{{~}});\r\n{{?}}\r\n{{?}}\r\n{{? updateKeys.some((item) => item === 'defName' || item === 'intro') }}COMMENT ON TABLE {{= tableKey }} IS '{{=it.func.strJoin(defName, intro, \";\", true)}}';{{?}}\r\n$blankline\r\n{{? updateKeys.some((item) => item === 'defKey') }}ALTER TABLE {{= tableKey }} RENAME TO {{=defKey}};{{?}}\r\n",
           "tableDelete": "{{\n    let schemaName = it.schemaName ? `${it.schemaName}.` : '';\n    const tableKey = `${schemaName}${it.defKey}`;\n}}\nDROP TABLE IF EXISTS {{= tableKey }};\n$blankline",
           "columnCreate": "{{\n    let fieldsUpdate = it.fieldsUpdate;\n    const computeDatatype = (field) => {\n        const { dbDataType, dataLen, numScale, defaultValue, autoIncrement } = field;\n        if(!dbDataType) {\n            return '';\n        }\n        if(autoIncrement) {\n            return dbDataType.toUpperCase() === 'INT8' ? 'BIGSERIAL' : 'SERIAL';\n        }\n        if(dbDataType.toUpperCase() === 'INT2' ||\n            dbDataType.toUpperCase() === 'INT4' ||\n            dbDataType.toUpperCase() === 'INT' ||\n            dbDataType.toUpperCase() === 'INT8' ||\n            dbDataType.toUpperCase() === 'SERIAL2' ||\n            dbDataType.toUpperCase() === 'SERIAL4' ||\n            dbDataType.toUpperCase() === 'SERIAL8' ||\n            dbDataType.toUpperCase() === 'FLOAT4' ||\n            dbDataType.toUpperCase() === 'FLOAT8' ||\n            dbDataType.toUpperCase() === 'MONEY' ||\n            dbDataType.toUpperCase() === 'TEXT' ||\n            dbDataType.toUpperCase() === 'BYTEA' ||\n            dbDataType.toUpperCase() === 'BOOLEAN' ||\n            dbDataType.toUpperCase() === 'JSONB' ||\n            dbDataType.toUpperCase() === 'JSON' ||\n            dbDataType.toUpperCase() === 'DATE') {\n            return dbDataType;\n        }\n        if(dbDataType.toUpperCase() === 'DECIMAL') {\n            if(dataLen && dataLen >= 1 && dataLen <= 1000) {\n                if(numScale && numScale >= 0 && numScale <= dataLen) {\n                    return `${dbDataType}(${dataLen},${numScale})`;\n                } else {\n                    return `${dbDataType}(${dataLen})`;\n                }\n            }\n            return dbDataType;\n        }\n        if(dataLen && dataLen >= 0) {\n            return `${dbDataType}(${dataLen})`;\n        }\n        return dbDataType;\n    };\n    let schemaName = it.schemaName ? `${it.schemaName}.` : '';\n    const tableKey = `${schemaName}${it.defKey}`;\n}}\n{{~fieldsUpdate:field:index}}\n{{\n    const finalDataType = computeDatatype(field);\n}}\nALTER TABLE {{= tableKey }} ADD COLUMN {{= field.defKey }} {{= finalDataType }}{{? field.notNull }} NOT NULL{{?}};\n{{? field.defName || field.intro }}\nCOMMENT ON COLUMN {{= tableKey }}.{{= field.defKey}} IS '{{=it.func.strJoin(field.defName, field.intro, \";\", true)}}';\n{{?}}\n{{? field.defaultValue !== null && field.defaultValue !== undefined && field.defaultValue !== ''}}\nALTER TABLE {{= tableKey }} ALTER COLUMN {{= field.defKey}} SET DEFAULT {{=field.defaultValue}};\n{{?}}\n{{~}}",
@@ -977,11 +977,9 @@
           "orderValue": 1,
           "dbDataType": {
             "XuguDB": "VARCHAR",
-            "PostgreSQL": "VARCHAR",
             "DaMeng": "NVARCHAR",
             "KingBase": "NVARCHAR",
             "SQLite": "NVRCHAR",
-            "MySQL": "NVARCHAR",
             "Inceptor": "NVARCHAR2",
             "Oracle": "NVARCHAR2",
             "HighGo": "CHARACTER VARYING",
@@ -1000,7 +998,9 @@
             "GBase 8s": "NVARCHAR",
             "TiDB": "NVARCHAR",
             "DB2": "VARCHAR",
-            "SQLServer": "NVARCHAR"
+            "SQLServer": "NVARCHAR",
+            "MySQL": "NVARCHAR",
+            "PostgreSQL": "VARCHAR"
           },
           "langDataType": {
             "CSharp": "string",
@@ -1028,11 +1028,9 @@
           "orderValue": 1,
           "dbDataType": {
             "XuguDB": "VARCHAR",
-            "PostgreSQL": "VARCHAR",
             "DaMeng": "VARCHAR",
             "KingBase": "VARCHAR",
             "SQLite": "TEXT",
-            "MySQL": "VARCHAR",
             "Inceptor": "VARCHAR",
             "Oracle": "VARCHAR2",
             "HighGo": "VARCHAR",
@@ -1051,7 +1049,9 @@
             "GBase 8s": "VARCHAR",
             "TiDB": "VARCHAR",
             "DB2": "VARCHAR",
-            "SQLServer": "VARCHAR"
+            "SQLServer": "VARCHAR",
+            "MySQL": "VARCHAR",
+            "PostgreSQL": "VARCHAR"
           },
           "langDataType": {
             "CSharp": "string",
@@ -1079,11 +1079,9 @@
           "orderValue": 2,
           "dbDataType": {
             "XuguDB": "CHAR",
-            "PostgreSQL": "CHAR",
             "DaMeng": "CHAR",
             "KingBase": "CHAR",
             "SQLite": "CHAR",
-            "MySQL": "CHAR",
             "Inceptor": "CHAR",
             "Oracle": "CHAR",
             "HighGo": "CHAR",
@@ -1102,7 +1100,9 @@
             "GBase 8s": "CHAR",
             "TiDB": "CHAR",
             "DB2": "CHAR",
-            "SQLServer": "CHAR"
+            "SQLServer": "CHAR",
+            "MySQL": "CHAR",
+            "PostgreSQL": "CHAR"
           },
           "langDataType": {
             "CSharp": "string",
@@ -1130,11 +1130,9 @@
           "orderValue": 3,
           "dbDataType": {
             "XuguDB": "CHAR",
-            "PostgreSQL": "CHAR",
             "DaMeng": "NCHAR",
             "KingBase": "NCHAR",
             "SQLite": "NCHAR",
-            "MySQL": "NCHAR",
             "Inceptor": "CHAR",
             "Oracle": "NCHAR",
             "HighGo": "CHARACTER",
@@ -1153,7 +1151,9 @@
             "GBase 8s": "NCHAR",
             "TiDB": "NCHAR",
             "DB2": "CHAR",
-            "SQLServer": "NCHAR"
+            "SQLServer": "NCHAR",
+            "MySQL": "NCHAR",
+            "PostgreSQL": "CHAR"
           },
           "langDataType": {
             "CSharp": "string",
@@ -1181,11 +1181,9 @@
           "orderValue": 4,
           "dbDataType": {
             "XuguDB": "TINYINT",
-            "PostgreSQL": "INT2",
             "DaMeng": "TINYINT",
             "KingBase": "TINYINT",
             "SQLite": "TINYINT",
-            "MySQL": "TINYINT",
             "Inceptor": "TINYINT",
             "Oracle": "INTEGER",
             "HighGo": "",
@@ -1204,7 +1202,9 @@
             "GBase 8s": "",
             "TiDB": "TINYINT",
             "DB2": "SMALLINT",
-            "SQLServer": "TINYINT"
+            "SQLServer": "TINYINT",
+            "MySQL": "TINYINT",
+            "PostgreSQL": "INT2"
           },
           "langDataType": {
             "CSharp": "byte",
@@ -1232,11 +1232,9 @@
           "orderValue": 5,
           "dbDataType": {
             "XuguDB": "SMALLINT",
-            "PostgreSQL": "INT2",
             "DaMeng": "SMALLINT",
             "KingBase": "SMALLINT",
             "SQLite": "SMALLINT",
-            "MySQL": "SMALLINT",
             "Inceptor": "SMALLINT",
             "Oracle": "INTEGER",
             "HighGo": "SMALLINT",
@@ -1255,7 +1253,9 @@
             "GBase 8s": "SMALLINT",
             "TiDB": "SMALLINT",
             "DB2": "SMALLINT",
-            "SQLServer": "SMALLINT"
+            "SQLServer": "SMALLINT",
+            "MySQL": "SMALLINT",
+            "PostgreSQL": "INT2"
           },
           "langDataType": {
             "CSharp": "short",
@@ -1283,11 +1283,9 @@
           "orderValue": 6,
           "dbDataType": {
             "XuguDB": "",
-            "PostgreSQL": "INT",
             "DaMeng": "INTEGER",
             "KingBase": "",
             "SQLite": "MEDIUMINT",
-            "MySQL": "MEDIUMINT",
             "Inceptor": "INT",
             "Oracle": "INTEGER",
             "HighGo": "",
@@ -1306,7 +1304,9 @@
             "GBase 8s": "",
             "TiDB": "MEDIUMINT",
             "DB2": "INTEGER",
-            "SQLServer": "INT"
+            "SQLServer": "INT",
+            "MySQL": "MEDIUMINT",
+            "PostgreSQL": "INT"
           },
           "langDataType": {
             "CSharp": "int",
@@ -1334,11 +1334,9 @@
           "orderValue": 7,
           "dbDataType": {
             "XuguDB": "INTEGER",
-            "PostgreSQL": "INT4",
             "DaMeng": "INTEGER",
             "KingBase": "INTEGER",
             "SQLite": "INTEGER",
-            "MySQL": "INT",
             "Inceptor": "INT",
             "Oracle": "INTEGER",
             "HighGo": "INTEGER",
@@ -1357,7 +1355,9 @@
             "GBase 8s": "INTEGER",
             "TiDB": "INT",
             "DB2": "INTEGER",
-            "SQLServer": "INT"
+            "SQLServer": "INT",
+            "MySQL": "INT",
+            "PostgreSQL": "INT4"
           },
           "langDataType": {
             "CSharp": "int",
@@ -1385,11 +1385,9 @@
           "orderValue": 8,
           "dbDataType": {
             "XuguDB": "BIGINT",
-            "PostgreSQL": "INT8",
             "DaMeng": "BIGINT",
             "KingBase": "BIGINT",
             "SQLite": "BIGHTINT",
-            "MySQL": "BIGINT",
             "Inceptor": "BIGINT",
             "Oracle": "INTEGER",
             "HighGo": "BIGINT",
@@ -1408,7 +1406,9 @@
             "GBase 8s": "BIGINT",
             "TiDB": "BIGINT",
             "DB2": "BIGINT",
-            "SQLServer": "BIGINT"
+            "SQLServer": "BIGINT",
+            "MySQL": "BIGINT",
+            "PostgreSQL": "INT8"
           },
           "langDataType": {
             "CSharp": "long",
@@ -1436,11 +1436,9 @@
           "orderValue": 9,
           "dbDataType": {
             "XuguDB": "SMALLINT",
-            "PostgreSQL": "SERIAL2",
             "DaMeng": "SMALLINT",
             "KingBase": "SMALLSERIAL",
             "SQLite": "SMALLSERIAL",
-            "MySQL": "SMALLINT",
             "Inceptor": "INT",
             "Oracle": "INTEGER",
             "HighGo": "SMALLSERIAL",
@@ -1459,7 +1457,9 @@
             "GBase 8s": "",
             "TiDB": "SMALLINT",
             "DB2": "SMALLINT",
-            "SQLServer": "TINYINT"
+            "SQLServer": "TINYINT",
+            "MySQL": "SMALLINT",
+            "PostgreSQL": "SERIAL2"
           },
           "langDataType": {
             "CSharp": "short",
@@ -1487,11 +1487,9 @@
           "orderValue": 10,
           "dbDataType": {
             "XuguDB": "INTEGER",
-            "PostgreSQL": "SERIAL4",
             "DaMeng": "INT",
             "KingBase": "SERIAL",
             "SQLite": "SERIAL",
-            "MySQL": "INT",
             "Inceptor": "INT",
             "Oracle": "INTEGER",
             "HighGo": "SERIAL",
@@ -1510,7 +1508,9 @@
             "GBase 8s": "SERIAL",
             "TiDB": "INT",
             "DB2": "INTEGER",
-            "SQLServer": "INT"
+            "SQLServer": "INT",
+            "MySQL": "INT",
+            "PostgreSQL": "SERIAL4"
           },
           "langDataType": {
             "CSharp": "int",
@@ -1538,11 +1538,9 @@
           "orderValue": 11,
           "dbDataType": {
             "XuguDB": "BIGINT",
-            "PostgreSQL": "SERIAL8",
             "DaMeng": "BIGINT",
             "KingBase": "BIGSERIAL",
             "SQLite": "BIGSERIAL",
-            "MySQL": "BIGINT",
             "Inceptor": "INT",
             "Oracle": "INTEGER",
             "HighGo": "BIGSERIAL",
@@ -1561,7 +1559,9 @@
             "GBase 8s": "SERIAL8",
             "TiDB": "BIGINT",
             "DB2": "BIGINT",
-            "SQLServer": "BIGINT"
+            "SQLServer": "BIGINT",
+            "MySQL": "BIGINT",
+            "PostgreSQL": "SERIAL8"
           },
           "langDataType": {
             "CSharp": "long",
@@ -1589,11 +1589,9 @@
           "orderValue": 12,
           "dbDataType": {
             "XuguDB": "FLOAT",
-            "PostgreSQL": "FLOAT4",
             "DaMeng": "REAL",
             "KingBase": "REAL",
             "SQLite": "FLOAT",
-            "MySQL": "FLOAT",
             "Inceptor": "FLOAT",
             "Oracle": "NUMBER",
             "HighGo": "REAL",
@@ -1612,7 +1610,9 @@
             "GBase 8s": "REAL",
             "TiDB": "FLOAT",
             "DB2": "REAL",
-            "SQLServer": "REAL"
+            "SQLServer": "REAL",
+            "MySQL": "FLOAT",
+            "PostgreSQL": "FLOAT4"
           },
           "langDataType": {
             "CSharp": "float",
@@ -1640,11 +1640,9 @@
           "orderValue": 13,
           "dbDataType": {
             "XuguDB": "DOUBLE",
-            "PostgreSQL": "FLOAT8",
             "DaMeng": "DOUBLE",
             "KingBase": "DOUBLE PRECISION",
             "SQLite": "DOUBLE",
-            "MySQL": "DOUBLE",
             "Inceptor": "DOUBLE",
             "Oracle": "BINARY_DOUBLE",
             "HighGo": "DOUBLE PRECISION",
@@ -1663,7 +1661,9 @@
             "GBase 8s": "FLOAT",
             "TiDB": "DOUBLE",
             "DB2": "DOUBLE",
-            "SQLServer": "FLOAT"
+            "SQLServer": "FLOAT",
+            "MySQL": "DOUBLE",
+            "PostgreSQL": "FLOAT8"
           },
           "langDataType": {
             "CSharp": "double",
@@ -1691,11 +1691,9 @@
           "orderValue": 14,
           "dbDataType": {
             "XuguDB": "NUMERIC",
-            "PostgreSQL": "DECIMAL",
             "DaMeng": "DECIMAL",
             "KingBase": "NUMERIC",
             "SQLite": "DECIMAL",
-            "MySQL": "DECIMAL",
             "Inceptor": "DECIMAL",
             "Oracle": "DECIMAL",
             "HighGo": "NUMERIC",
@@ -1714,7 +1712,9 @@
             "GBase 8s": "DECIMAL",
             "TiDB": "DECIMAL",
             "DB2": "DECIMAL",
-            "SQLServer": "DECIMAL"
+            "SQLServer": "DECIMAL",
+            "MySQL": "DECIMAL",
+            "PostgreSQL": "DECIMAL"
           },
           "langDataType": {
             "CSharp": "decimal",
@@ -1742,11 +1742,9 @@
           "orderValue": 15,
           "dbDataType": {
             "XuguDB": "NUMERIC",
-            "PostgreSQL": "MONEY",
             "DaMeng": "DECIMAL",
             "KingBase": "DECIMAL",
             "SQLite": "MONEY",
-            "MySQL": "DECIMAL",
             "Inceptor": "DECIMAL",
             "Oracle": "DECIMAL",
             "HighGo": "MONEY",
@@ -1765,7 +1763,9 @@
             "GBase 8s": "MONEY",
             "TiDB": "DECIMAL",
             "DB2": "DECIMAL",
-            "SQLServer": "MONEY"
+            "SQLServer": "MONEY",
+            "MySQL": "DECIMAL",
+            "PostgreSQL": "MONEY"
           },
           "langDataType": {
             "CSharp": "decimal",
@@ -1793,11 +1793,9 @@
           "orderValue": 16,
           "dbDataType": {
             "XuguDB": "DATE",
-            "PostgreSQL": "DATE",
             "DaMeng": "DATE",
             "KingBase": "DATE",
             "SQLite": "DATE",
-            "MySQL": "DATE",
             "Inceptor": "DATE",
             "Oracle": "DATE",
             "HighGo": "DATE",
@@ -1816,7 +1814,9 @@
             "GBase 8s": "DATE",
             "TiDB": "DATE",
             "DB2": "DATE",
-            "SQLServer": "DATE"
+            "SQLServer": "DATE",
+            "MySQL": "DATE",
+            "PostgreSQL": "DATE"
           },
           "langDataType": {
             "CSharp": "DateTime",
@@ -1844,11 +1844,9 @@
           "orderValue": 17,
           "dbDataType": {
             "XuguDB": "TIME",
-            "PostgreSQL": "TIME",
             "DaMeng": "TIME",
             "KingBase": "TIME",
             "SQLite": "TIME",
-            "MySQL": "TIME",
             "Inceptor": "TIME",
             "Oracle": "",
             "HighGo": "TIME",
@@ -1867,7 +1865,9 @@
             "GBase 8s": "",
             "TiDB": "TIME",
             "DB2": "TIME",
-            "SQLServer": "TIME"
+            "SQLServer": "TIME",
+            "MySQL": "TIME",
+            "PostgreSQL": "TIME"
           },
           "langDataType": {
             "CSharp": "TimeSpan",
@@ -1895,11 +1895,9 @@
           "orderValue": 18,
           "dbDataType": {
             "XuguDB": "",
-            "PostgreSQL": "",
             "DaMeng": "",
             "KingBase": "",
             "SQLite": "YEAR",
-            "MySQL": "YEAR",
             "Inceptor": "DATE",
             "Oracle": "",
             "HighGo": "",
@@ -1918,7 +1916,9 @@
             "GBase 8s": "",
             "TiDB": "YEAR",
             "DB2": "",
-            "SQLServer": ""
+            "SQLServer": "",
+            "MySQL": "YEAR",
+            "PostgreSQL": ""
           },
           "langDataType": {
             "CSharp": "",
@@ -1945,11 +1945,9 @@
           "orderValue": 19,
           "dbDataType": {
             "XuguDB": "DATETIME",
-            "PostgreSQL": "TIMESTAMP",
             "DaMeng": "DATETIME",
             "KingBase": "DATETIME",
             "SQLite": "DATETIME",
-            "MySQL": "DATETIME",
             "Inceptor": "DATE",
             "Oracle": "TIMESTAMP",
             "HighGo": "TIMESTAMP",
@@ -1968,7 +1966,9 @@
             "GBase 8s": "DATETIME",
             "TiDB": "DATETIME",
             "DB2": "TIMESTAMP",
-            "SQLServer": "DATETIME"
+            "SQLServer": "DATETIME",
+            "MySQL": "DATETIME",
+            "PostgreSQL": "TIMESTAMP"
           },
           "langDataType": {
             "CSharp": "DateTime",
@@ -1996,11 +1996,9 @@
           "orderValue": 20,
           "dbDataType": {
             "XuguDB": "",
-            "PostgreSQL": "TIMESTAMP",
             "DaMeng": "TIMESTAMP",
             "KingBase": "TIMESTAMP",
             "SQLite": "TIMESTAMP",
-            "MySQL": "TIMESTAMP",
             "Inceptor": "DATE",
             "Oracle": "TIMESTAMP",
             "HighGo": "TIMESTAMP",
@@ -2019,7 +2017,9 @@
             "GBase 8s": "TIMESTAMP",
             "TiDB": "TIMESTAMP",
             "DB2": "TIMESTAMP",
-            "SQLServer": "TIMESTAMP"
+            "SQLServer": "TIMESTAMP",
+            "MySQL": "TIMESTAMP",
+            "PostgreSQL": "TIMESTAMP"
           },
           "langDataType": {
             "CSharp": "DateTime",
@@ -2047,11 +2047,9 @@
           "orderValue": 21,
           "dbDataType": {
             "XuguDB": "INTERVAL DAY",
-            "PostgreSQL": "INTERVAL",
             "DaMeng": "INTERVAL YEAR",
             "KingBase": "INTERVAL",
             "SQLite": "INERVAL",
-            "MySQL": "",
             "Inceptor": "",
             "Oracle": "",
             "HighGo": "INTERVAL YEAR",
@@ -2070,7 +2068,9 @@
             "GBase 8s": "INTERVAL",
             "TiDB": "",
             "DB2": "",
-            "SQLServer": "TEXT"
+            "SQLServer": "TEXT",
+            "MySQL": "",
+            "PostgreSQL": "INTERVAL"
           },
           "langDataType": {
             "CSharp": "",
@@ -2097,11 +2097,9 @@
           "orderValue": 22,
           "dbDataType": {
             "XuguDB": "CLOB",
-            "PostgreSQL": "TEXT",
             "DaMeng": "TEXT",
             "KingBase": "TEXT",
             "SQLite": "INYTEXT",
-            "MySQL": "TINYTEXT",
             "Inceptor": "STRING",
             "Oracle": "CLOB",
             "HighGo": "TEXT",
@@ -2120,7 +2118,9 @@
             "GBase 8s": "TEXT",
             "TiDB": "TINYTEXT",
             "DB2": "CLOB",
-            "SQLServer": "TEXT"
+            "SQLServer": "TEXT",
+            "MySQL": "TINYTEXT",
+            "PostgreSQL": "TEXT"
           },
           "langDataType": {
             "CSharp": "string",
@@ -2148,11 +2148,9 @@
           "orderValue": 23,
           "dbDataType": {
             "XuguDB": "CLOB",
-            "PostgreSQL": "TEXT",
             "DaMeng": "TEXT",
             "KingBase": "TEXT",
             "SQLite": "TEXT",
-            "MySQL": "TEXT",
             "Inceptor": "STRING",
             "Oracle": "CLOB",
             "HighGo": "TEXT",
@@ -2171,7 +2169,9 @@
             "GBase 8s": "TEXT",
             "TiDB": "TEXT",
             "DB2": "CLOB",
-            "SQLServer": "TEXT"
+            "SQLServer": "TEXT",
+            "MySQL": "TEXT",
+            "PostgreSQL": "TEXT"
           },
           "langDataType": {
             "CSharp": "string",
@@ -2199,11 +2199,9 @@
           "orderValue": 24,
           "dbDataType": {
             "XuguDB": "CLOB",
-            "PostgreSQL": "TEXT",
             "DaMeng": "TEXT",
             "KingBase": "TEXT",
             "SQLite": "MEDIUMTEXT",
-            "MySQL": "MEDIUMTEXT",
             "Inceptor": "STRING",
             "Oracle": "CLOB",
             "HighGo": "TEXT",
@@ -2222,7 +2220,9 @@
             "GBase 8s": "TEXT",
             "TiDB": "MEDIUMTEXT",
             "DB2": "CLOB",
-            "SQLServer": "TEXT"
+            "SQLServer": "TEXT",
+            "MySQL": "MEDIUMTEXT",
+            "PostgreSQL": "TEXT"
           },
           "langDataType": {
             "CSharp": "string",
@@ -2250,11 +2250,9 @@
           "orderValue": 25,
           "dbDataType": {
             "XuguDB": "CLOB",
-            "PostgreSQL": "TEXT",
             "DaMeng": "TEXT",
             "KingBase": "TEXT",
             "SQLite": "LONGTEXT",
-            "MySQL": "LONGTEXT",
             "Inceptor": "STRING",
             "Oracle": "CLOB",
             "HighGo": "TEXT",
@@ -2273,7 +2271,9 @@
             "GBase 8s": "TEXT",
             "TiDB": "LONGTEXT",
             "DB2": "CLOB",
-            "SQLServer": "TEXT"
+            "SQLServer": "TEXT",
+            "MySQL": "LONGTEXT",
+            "PostgreSQL": "TEXT"
           },
           "langDataType": {
             "CSharp": "string",
@@ -2301,11 +2301,9 @@
           "orderValue": 26,
           "dbDataType": {
             "XuguDB": "BLOB",
-            "PostgreSQL": "BYTEA",
             "DaMeng": "VARBINARY",
             "KingBase": "BYTEA",
             "SQLite": "TINYBLOB",
-            "MySQL": "TINYBLOB",
             "Inceptor": "CLOB",
             "Oracle": "BLOB",
             "HighGo": "BYTEA",
@@ -2324,7 +2322,9 @@
             "GBase 8s": "BLOB",
             "TiDB": "TINYBLOB",
             "DB2": "BLOB",
-            "SQLServer": "VARBINARY"
+            "SQLServer": "VARBINARY",
+            "MySQL": "TINYBLOB",
+            "PostgreSQL": "BYTEA"
           },
           "langDataType": {
             "CSharp": "byte[]",
@@ -2352,11 +2352,9 @@
           "orderValue": 27,
           "dbDataType": {
             "XuguDB": "BLOB",
-            "PostgreSQL": "BYTEA",
             "DaMeng": "BLOB",
             "KingBase": "BYTEA",
             "SQLite": "BLOB",
-            "MySQL": "BLOB",
             "Inceptor": "BLOB",
             "Oracle": "BLOB",
             "HighGo": "BYTEA",
@@ -2375,7 +2373,9 @@
             "GBase 8s": "BLOB",
             "TiDB": "BLOB",
             "DB2": "BLOB",
-            "SQLServer": "VARBINARY"
+            "SQLServer": "VARBINARY",
+            "MySQL": "BLOB",
+            "PostgreSQL": "BYTEA"
           },
           "langDataType": {
             "CSharp": "byte[]",
@@ -2403,11 +2403,9 @@
           "orderValue": 28,
           "dbDataType": {
             "XuguDB": "BLOB",
-            "PostgreSQL": "BYTEA",
             "DaMeng": "VARBINARY",
             "KingBase": "BYTEA",
             "SQLite": "MEDIUMBLOB",
-            "MySQL": "MEDIUMBLOB",
             "Inceptor": "BLOB",
             "Oracle": "BLOB",
             "HighGo": "BYTEA",
@@ -2426,7 +2424,9 @@
             "GBase 8s": "BLOB",
             "TiDB": "MEDIUMBLOB",
             "DB2": "BLOB",
-            "SQLServer": "VARBINARY"
+            "SQLServer": "VARBINARY",
+            "MySQL": "MEDIUMBLOB",
+            "PostgreSQL": "BYTEA"
           },
           "langDataType": {
             "CSharp": "byte[]",
@@ -2454,11 +2454,9 @@
           "orderValue": 29,
           "dbDataType": {
             "XuguDB": "BLOB",
-            "PostgreSQL": "BYTEA",
             "DaMeng": "VARBINARY",
             "KingBase": "BYTEA",
             "SQLite": "LONGBLOB",
-            "MySQL": "LONGBLOB",
             "Inceptor": "BLOB",
             "Oracle": "BLOB",
             "HighGo": "BYTEA",
@@ -2477,7 +2475,9 @@
             "GBase 8s": "BLOB",
             "TiDB": "LONGBLOB",
             "DB2": "BLOB",
-            "SQLServer": "VARBINARY"
+            "SQLServer": "VARBINARY",
+            "MySQL": "LONGBLOB",
+            "PostgreSQL": "BYTEA"
           },
           "langDataType": {
             "CSharp": "byte[]",
@@ -2505,11 +2505,9 @@
           "orderValue": 30,
           "dbDataType": {
             "XuguDB": "BLOB",
-            "PostgreSQL": "BYTEA",
             "DaMeng": "BINARY",
             "KingBase": "BYTEA",
             "SQLite": "BINARY",
-            "MySQL": "BINARY",
             "Inceptor": "",
             "Oracle": "BLOB",
             "HighGo": "BYTEA",
@@ -2528,7 +2526,9 @@
             "GBase 8s": "BLOB",
             "TiDB": "BINARY",
             "DB2": "BINARY",
-            "SQLServer": "BINARY"
+            "SQLServer": "BINARY",
+            "MySQL": "BINARY",
+            "PostgreSQL": "BYTEA"
           },
           "langDataType": {
             "CSharp": "byte[]",
@@ -2556,11 +2556,9 @@
           "orderValue": 31,
           "dbDataType": {
             "XuguDB": "",
-            "PostgreSQL": "BYTEA",
             "DaMeng": "VARBINARY",
             "KingBase": "BYTEA",
             "SQLite": "VARBINARY",
-            "MySQL": "VARBINARY",
             "Inceptor": "",
             "Oracle": "BLOB",
             "HighGo": "BYTEA",
@@ -2579,7 +2577,9 @@
             "GBase 8s": "BLOB",
             "TiDB": "VARBINARY",
             "DB2": "VARBINARY",
-            "SQLServer": "VARBINARY"
+            "SQLServer": "VARBINARY",
+            "MySQL": "VARBINARY",
+            "PostgreSQL": "BYTEA"
           },
           "langDataType": {
             "CSharp": "byte[]",
@@ -2607,11 +2607,9 @@
           "orderValue": 32,
           "dbDataType": {
             "XuguDB": "BOOL",
-            "PostgreSQL": "BOOLEAN",
             "DaMeng": "CHAR",
             "KingBase": "BOOL",
             "SQLite": "BOOLEAN",
-            "MySQL": "BOOLEAN",
             "Inceptor": "BOOLEAN",
             "Oracle": "INTEGER",
             "HighGo": "BOOLEAN",
@@ -2630,7 +2628,9 @@
             "GBase 8s": "BOOLEAN",
             "TiDB": "BOOLEAN",
             "DB2": "BOOLEAN",
-            "SQLServer": "BIT"
+            "SQLServer": "BIT",
+            "MySQL": "BOOLEAN",
+            "PostgreSQL": "BOOLEAN"
           },
           "langDataType": {
             "CSharp": "bool",
@@ -2658,11 +2658,9 @@
           "orderValue": 33,
           "dbDataType": {
             "XuguDB": "CLOB",
-            "PostgreSQL": "JSON",
             "DaMeng": "CLOB",
             "KingBase": "JSON",
             "SQLite": "JSON",
-            "MySQL": "JSON",
             "Inceptor": "",
             "Oracle": "CLOB",
             "HighGo": "JSON",
@@ -2681,7 +2679,9 @@
             "GBase 8s": "TEXT",
             "TiDB": "JSON",
             "DB2": "CLOB",
-            "SQLServer": "VARCHAR"
+            "SQLServer": "VARCHAR",
+            "MySQL": "JSON",
+            "PostgreSQL": "JSON"
           },
           "langDataType": {
             "CSharp": "Newtonsoft.Json",
@@ -2709,11 +2709,9 @@
           "orderValue": 34,
           "dbDataType": {
             "XuguDB": "CLOB",
-            "PostgreSQL": "JSONB",
             "DaMeng": "CLOB",
             "KingBase": "JSONB",
             "SQLite": "JSON",
-            "MySQL": "JSON",
             "Inceptor": "",
             "Oracle": "CLOB",
             "HighGo": "JSON",
@@ -2732,7 +2730,9 @@
             "GBase 8s": "TEXT",
             "TiDB": "JSON",
             "DB2": "CLOB",
-            "SQLServer": "VARCHAR"
+            "SQLServer": "VARCHAR",
+            "MySQL": "JSON",
+            "PostgreSQL": "JSONB"
           },
           "langDataType": {
             "CSharp": "",
@@ -2759,11 +2759,9 @@
           "orderValue": 35,
           "dbDataType": {
             "XuguDB": "BINARY",
-            "PostgreSQL": "BIT",
             "DaMeng": "BINARY",
             "KingBase": "BIT",
             "SQLite": "BIT",
-            "MySQL": "BIT",
             "Inceptor": "",
             "Oracle": "VARCHAR2",
             "HighGo": "BIT",
@@ -2782,7 +2780,9 @@
             "GBase 8s": "BYTE",
             "TiDB": "BIT",
             "DB2": "CHAR",
-            "SQLServer": "BIT"
+            "SQLServer": "BIT",
+            "MySQL": "BIT",
+            "PostgreSQL": "BIT"
           },
           "langDataType": {
             "CSharp": "byte[]",
@@ -2810,11 +2810,9 @@
           "orderValue": 36,
           "dbDataType": {
             "XuguDB": "BINARY",
-            "PostgreSQL": "VARBIT",
             "DaMeng": "VARBINARY",
             "KingBase": "VARBIT",
             "SQLite": "VARBIT",
-            "MySQL": "BIT",
             "Inceptor": "",
             "Oracle": "VARCHAR2",
             "HighGo": "BIT VARYING",
@@ -2833,7 +2831,9 @@
             "GBase 8s": "BYTE",
             "TiDB": "BIT",
             "DB2": "VARCHAR",
-            "SQLServer": "BIT"
+            "SQLServer": "BIT",
+            "MySQL": "BIT",
+            "PostgreSQL": "VARBIT"
           },
           "langDataType": {
             "CSharp": "byte[]",
@@ -2861,11 +2861,9 @@
           "orderValue": 37,
           "dbDataType": {
             "XuguDB": "",
-            "PostgreSQL": "",
             "DaMeng": "",
             "KingBase": "",
             "SQLite": "ENUM",
-            "MySQL": "ENUM",
             "Inceptor": "",
             "Oracle": "",
             "HighGo": "",
@@ -2884,7 +2882,9 @@
             "GBase 8s": "",
             "TiDB": "ENUM",
             "DB2": "",
-            "SQLServer": ""
+            "SQLServer": "",
+            "MySQL": "ENUM",
+            "PostgreSQL": ""
           },
           "langDataType": {
             "CSharp": "enum",
@@ -2912,11 +2912,9 @@
           "orderValue": 38,
           "dbDataType": {
             "XuguDB": "",
-            "PostgreSQL": "",
             "DaMeng": "",
             "KingBase": "",
             "SQLite": "",
-            "MySQL": "SET",
             "Inceptor": "",
             "Oracle": "",
             "HighGo": "",
@@ -2935,7 +2933,9 @@
             "GBase 8s": "",
             "TiDB": "SET",
             "DB2": "",
-            "SQLServer": ""
+            "SQLServer": "",
+            "MySQL": "SET",
+            "PostgreSQL": ""
           },
           "langDataType": {
             "CSharp": "HashSet<T>",
@@ -2963,11 +2963,9 @@
           "orderValue": 39,
           "dbDataType": {
             "XuguDB": "",
-            "PostgreSQL": "",
             "DaMeng": "",
             "KingBase": "",
             "SQLite": "",
-            "MySQL": "",
             "Inceptor": "",
             "Oracle": "NUMBER",
             "HighGo": "",
@@ -2986,7 +2984,9 @@
             "GBase 8s": "",
             "TiDB": "",
             "DB2": "",
-            "SQLServer": ""
+            "SQLServer": "",
+            "MySQL": "",
+            "PostgreSQL": ""
           },
           "langDataType": {
             "CSharp": "",
@@ -3324,7 +3324,7 @@
     },
     "project": {
       "branch": "master",
-      "dbDialect": "MySQL",
+      "dbDialect": "PostgreSQL",
       "schema": null,
       "status": "EDIT",
       "allow": "W",
@@ -4230,7 +4230,8 @@
         "defKey": "Article",
         "defName": "文章",
         "intro": "",
-        "type": "C"
+        "type": "C",
+        "fields": []
       },
       {
         "id": "C51D75A8-3C42-434E-B68F-4A34EEC72905",
@@ -4238,7 +4239,8 @@
         "defKey": "Category",
         "defName": "分类",
         "intro": "",
-        "type": "C"
+        "type": "C",
+        "fields": []
       },
       {
         "id": "1BDFD7FC-8CB3-4AC9-8C72-C4AE33B19C68",
@@ -4246,7 +4248,8 @@
         "defKey": "Tag",
         "defName": "标签",
         "intro": "",
-        "type": "C"
+        "type": "C",
+        "fields": []
       },
       {
         "id": "E641F2AE-6F07-4610-9D79-9A953E7BCA7A",
@@ -4254,12 +4257,13 @@
         "defKey": "Comment",
         "defName": "评论",
         "intro": "",
-        "type": "C"
+        "type": "C",
+        "fields": []
       },
       {
         "id": "B42F5092-3193-41AA-A4C9-87D8317E9A3B",
         "schemaName": null,
-        "defKey": "t_user",
+        "defKey": "t_users",
         "defName": "用户表",
         "intro": "",
         "type": "P",
@@ -4271,7 +4275,7 @@
             "intro": "",
             "baseDataType": "BIGINT",
             "bizDomainType": "",
-            "dbDataType": "BIGINT",
+            "dbDataType": "INT8",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 1,
@@ -4501,7 +4505,7 @@
             "intro": "",
             "baseDataType": "DATETIME",
             "bizDomainType": "",
-            "dbDataType": "DATETIME",
+            "dbDataType": "TIMESTAMP",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -4547,7 +4551,7 @@
             "intro": "",
             "baseDataType": "DATETIME",
             "bizDomainType": "",
-            "dbDataType": "DATETIME",
+            "dbDataType": "TIMESTAMP",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -4604,12 +4608,58 @@
             "intro": "",
             "baseDataType": "BIGINT",
             "bizDomainType": "",
-            "dbDataType": "BIGINT",
+            "dbDataType": "INT8",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 1,
             "notNull": 0,
             "autoIncrement": 1,
+            "defaultValue": "",
+            "stndDictId": "",
+            "stndFieldId": "",
+            "stndDictKey": "",
+            "stndFieldKey": "",
+            "stndComplianceLevel": "",
+            "stndComplianceType": "",
+            "dictFrom": "",
+            "dictItems": null,
+            "fieldTier": "",
+            "mark": null,
+            "attr1": "",
+            "attr2": "",
+            "attr3": "",
+            "attr4": "",
+            "attr5": "",
+            "attr6": "",
+            "attr7": "",
+            "attr8": "",
+            "attr9": "",
+            "attr10": "",
+            "attr11": "",
+            "attr12": "",
+            "attr13": "",
+            "attr14": "",
+            "attr15": "",
+            "attr16": "",
+            "attr17": "",
+            "attr18": "",
+            "attr19": "",
+            "attr20": "",
+            "origin": "UI"
+          },
+          {
+            "id": "7C100C33-9756-4F25-9234-49F7224CA749",
+            "defKey": "author_id",
+            "defName": "作者ID",
+            "intro": "",
+            "baseDataType": "BIGINT",
+            "bizDomainType": "",
+            "dbDataType": "INT8",
+            "dataLen": "",
+            "numScale": "",
+            "primaryKey": 0,
+            "notNull": 0,
+            "autoIncrement": 0,
             "defaultValue": "",
             "stndDictId": "",
             "stndFieldId": "",
@@ -4650,7 +4700,7 @@
             "intro": "",
             "baseDataType": "BIGINT",
             "bizDomainType": "",
-            "dbDataType": "BIGINT",
+            "dbDataType": "INT8",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -4828,59 +4878,13 @@
             "origin": "UI"
           },
           {
-            "id": "7C100C33-9756-4F25-9234-49F7224CA749",
-            "defKey": "author_id",
-            "defName": "作者ID",
-            "intro": "",
-            "baseDataType": "BIGINT",
-            "bizDomainType": "",
-            "dbDataType": "BIGINT",
-            "dataLen": "",
-            "numScale": "",
-            "primaryKey": 0,
-            "notNull": 0,
-            "autoIncrement": 0,
-            "defaultValue": "",
-            "stndDictId": "",
-            "stndFieldId": "",
-            "stndDictKey": "",
-            "stndFieldKey": "",
-            "stndComplianceLevel": "",
-            "stndComplianceType": "",
-            "dictFrom": "",
-            "dictItems": null,
-            "fieldTier": "",
-            "mark": null,
-            "attr1": "",
-            "attr2": "",
-            "attr3": "",
-            "attr4": "",
-            "attr5": "",
-            "attr6": "",
-            "attr7": "",
-            "attr8": "",
-            "attr9": "",
-            "attr10": "",
-            "attr11": "",
-            "attr12": "",
-            "attr13": "",
-            "attr14": "",
-            "attr15": "",
-            "attr16": "",
-            "attr17": "",
-            "attr18": "",
-            "attr19": "",
-            "attr20": "",
-            "origin": "UI"
-          },
-          {
             "id": "AC843AD3-E57D-4C8C-8E05-B196DB933A6F",
             "defKey": "status",
             "defName": "状态",
             "intro": "0：未发布、1：已发布",
             "baseDataType": "TINYINT",
             "bizDomainType": "",
-            "dbDataType": "TINYINT",
+            "dbDataType": "INT2",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -4926,7 +4930,7 @@
             "intro": "",
             "baseDataType": "DATETIME",
             "bizDomainType": "",
-            "dbDataType": "DATETIME",
+            "dbDataType": "TIMESTAMP",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -4972,7 +4976,7 @@
             "intro": "",
             "baseDataType": "DATETIME",
             "bizDomainType": "",
-            "dbDataType": "DATETIME",
+            "dbDataType": "TIMESTAMP",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -5018,7 +5022,7 @@
             "intro": "",
             "baseDataType": "DATETIME",
             "bizDomainType": "",
-            "dbDataType": "DATETIME",
+            "dbDataType": "TIMESTAMP",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -5075,7 +5079,7 @@
             "intro": "",
             "baseDataType": "BIGINT",
             "bizDomainType": "",
-            "dbDataType": "BIGINT",
+            "dbDataType": "INT8",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 1,
@@ -5121,7 +5125,7 @@
             "intro": "",
             "baseDataType": "BIGINT",
             "bizDomainType": "",
-            "dbDataType": "BIGINT",
+            "dbDataType": "INT8",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -5167,7 +5171,7 @@
             "intro": "",
             "baseDataType": "BIGINT",
             "bizDomainType": "",
-            "dbDataType": "BIGINT",
+            "dbDataType": "INT8",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -5213,7 +5217,7 @@
             "intro": "可空",
             "baseDataType": "BIGINT",
             "bizDomainType": "",
-            "dbDataType": "BIGINT",
+            "dbDataType": "INT8",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -5259,7 +5263,7 @@
             "intro": "",
             "baseDataType": "BIGINT",
             "bizDomainType": "",
-            "dbDataType": "BIGINT",
+            "dbDataType": "INT8",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -5351,7 +5355,7 @@
             "intro": "",
             "baseDataType": "DATETIME",
             "bizDomainType": "",
-            "dbDataType": "DATETIME",
+            "dbDataType": "TIMESTAMP",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -5408,7 +5412,7 @@
             "intro": "",
             "baseDataType": "BIGINT",
             "bizDomainType": "",
-            "dbDataType": "BIGINT",
+            "dbDataType": "INT8",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 1,
@@ -5500,7 +5504,7 @@
             "intro": "",
             "baseDataType": "DATETIME",
             "bizDomainType": "",
-            "dbDataType": "DATETIME",
+            "dbDataType": "TIMESTAMP",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -5546,7 +5550,7 @@
             "intro": "",
             "baseDataType": "DATETIME",
             "bizDomainType": "",
-            "dbDataType": "DATETIME",
+            "dbDataType": "TIMESTAMP",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -5603,7 +5607,7 @@
             "intro": "",
             "baseDataType": "BIGINT",
             "bizDomainType": "",
-            "dbDataType": "BIGINT",
+            "dbDataType": "INT8",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 1,
@@ -5649,7 +5653,7 @@
             "intro": "",
             "baseDataType": "BIGINT",
             "bizDomainType": "",
-            "dbDataType": "BIGINT",
+            "dbDataType": "INT8",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 1,
@@ -5704,9 +5708,9 @@
             "defKey": "id",
             "defName": "ID",
             "intro": "",
-            "baseDataType": "BIGINT",
+            "baseDataType": "YEAR",
             "bizDomainType": "",
-            "dbDataType": "BIGINT",
+            "dbDataType": "",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 1,
@@ -5798,7 +5802,7 @@
             "intro": "",
             "baseDataType": "DATETIME",
             "bizDomainType": "",
-            "dbDataType": "DATETIME",
+            "dbDataType": "TIMESTAMP",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -5844,7 +5848,7 @@
             "intro": "",
             "baseDataType": "DATETIME",
             "bizDomainType": "",
-            "dbDataType": "DATETIME",
+            "dbDataType": "TIMESTAMP",
             "dataLen": "",
             "numScale": "",
             "primaryKey": 0,
@@ -8570,7 +8574,7 @@
             },
             "target": {
               "cell": "cd2d2829-135b-47dd-83ef-bff77b7c88ea",
-              "port": "5F1AE9C2-D8B4-4946-92F2-369BD73ACB03_in"
+              "port": "7C100C33-9756-4F25-9234-49F7224CA749_in"
             }
           },
           {
@@ -9734,6 +9738,57 @@
               "cell": "cd2d2829-135b-47dd-83ef-bff77b7c88ea",
               "port": "1E80CCDC-5374-4E72-9CB2-C60A099D2DB7_in"
             }
+          },
+          {
+            "position": {
+              "x": -370.00000000001035,
+              "y": -749.9999999999968
+            },
+            "size": {
+              "width": 1460,
+              "height": 1570
+            },
+            "view": "react-shape-view",
+            "attrs": {
+              "body": {
+                "fill": "none",
+                "stroke": "rgb(179, 179, 179)",
+                "refWidth": "100%",
+                "refHeight": "100%",
+                "rx": 5,
+                "fill-opacity": 1,
+                "stroke-width": 1,
+                "stroke-opacity": 0.78695652173913,
+                "stroke-dasharray": "0"
+              },
+              "fo": {
+                "refWidth": "100%",
+                "refHeight": "100%"
+              },
+              "text": {
+                "fill": "",
+                "fontSize": "12",
+                "font-style": "",
+                "fontFamily": "思源黑体,",
+                "textAnchor": "middle",
+                "font-weight": "",
+                "text-decoration": "",
+                "textVerticalAnchor": "middle",
+                "text": "吃瓜网数据库设计"
+              }
+            },
+            "shape": "group",
+            "id": "4f0e8d1e-9c55-4496-b5cc-b1d9526b3cf9",
+            "cellType": "group",
+            "tools": {
+              "items": [
+                "edit-node",
+                "node-size",
+                "highlight-node",
+                "link-node"
+              ]
+            },
+            "zIndex": -1
           }
         ]
       }
@@ -9741,6 +9796,6 @@
     "readonly": false,
     "allowWs": false
   },
-  "updateTime": 1775833955694,
-  "signature": "9c5d7c5a0b42ef7b7969cc35e7e8efd3"
+  "updateTime": 1775890752314,
+  "signature": "7687f47d28f17d911b7ca521ad5785a6"
 }

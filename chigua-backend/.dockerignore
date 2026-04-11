@@ -1,0 +1,24 @@
+# 忽略环境变量文件
+.env
+
+# 忽略日志目录
+logs/
+
+# 忽略Go构建产物
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 忽略IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 忽略Git文件
+.git/
+.gitignore
