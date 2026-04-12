@@ -1,6 +1,13 @@
 <script setup lang="ts">
+// App组件
+import NavBar from "@/components/NavBar.vue"
 </script>
 
 <template>
-  <h1>Hello Sylvie233</h1>
+  <NavBar />
+  <div class="min-w-130">
+    <router-view />
+  </div>
 </template>
+
+<style></style>

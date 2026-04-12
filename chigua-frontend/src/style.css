@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+:root {
+  --primary-color: #3b82f6;
+  --secondary-color: #94a3b8;
+  --dark-color: #1e293b;
+  --light-color: #f8fafc;
+  --bg-color: #262626;
+  --card-bg: #1e293b;
+  --text-color: #fafafa;
+}
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
