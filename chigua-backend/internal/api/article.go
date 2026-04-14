@@ -4,7 +4,6 @@ import (
 	"chigua-backend/internal/model"
 	"chigua-backend/internal/service"
 	"chigua-backend/utils/logger"
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -13,23 +12,23 @@ import (
 func CreateArticle(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "未认证"})
+		c.JSON(int(model.Unauthorized), model.ErrorResponse(model.Unauthorized))
 		return
 	}
 
 	var articleCreate model.ArticleCreate
 	if err := c.ShouldBindJSON(&articleCreate); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数错误"})
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
 		return
 	}
 
 	article, err := service.CreateArticle(articleCreate, userID.(int64))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建文章失败"})
+		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "创建文章成功", "article": article})
+	c.JSON(int(model.Success), model.SuccessResponse(article))
 }
 
 func GetArticleList(c *gin.Context) {
@@ -45,98 +44,98 @@ func GetArticleList(c *gin.Context) {
 
 	articles, err := service.GetArticleList(page, pageSize)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取文章列表失败"})
+		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
 		return
 	}
 
-	c.JSON(http.StatusOK, articles)
+	c.JSON(int(model.Success), model.SuccessResponse(articles))
 }
 
 func GetArticleByID(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的文章ID"})
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
 		return
 	}
 
 	article, err := service.GetArticleByID(id)
 	logger.Error(err)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在"})
+		c.JSON(int(model.NotFound), model.ErrorResponse(model.ArticleNotFound))
 		return
 	}
 
-	c.JSON(http.StatusOK, article)
+	c.JSON(int(model.Success), model.SuccessResponse(article))
 }
 
 func UpdateArticle(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "未认证"})
+		c.JSON(int(model.Unauthorized), model.ErrorResponse(model.Unauthorized))
 		return
 	}
 
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的文章ID"})
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
 		return
 	}
 
 	var articleUpdate model.ArticleUpdate
 	if err := c.ShouldBindJSON(&articleUpdate); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数错误"})
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
 		return
 	}
 
 	article, err := service.UpdateArticle(id, articleUpdate, userID.(int64))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.InvalidParams))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "更新文章成功", "article": article})
+	c.JSON(int(model.Success), model.SuccessResponse(article))
 }
 
 func DeleteArticle(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "未认证"})
+		c.JSON(int(model.Unauthorized), model.ErrorResponse(model.Unauthorized))
 		return
 	}
 
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的文章ID"})
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
 		return
 	}
 
 	err = service.DeleteArticle(id, userID.(int64))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.InvalidParams))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "删除文章成功"})
+	c.JSON(int(model.Success), model.SuccessResponse(nil))
 }
 
 func PublishArticle(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "未认证"})
+		c.JSON(int(model.Unauthorized), model.ErrorResponse(model.Unauthorized))
 		return
 	}
 
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的文章ID"})
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
 		return
 	}
 
 	err = service.PublishArticle(id, userID.(int64))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.InvalidParams))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "发布文章成功"})
+	c.JSON(int(model.Success), model.SuccessResponse(nil))
 }

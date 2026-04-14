@@ -3,6 +3,7 @@ package router
 import (
 	api "chigua-backend/internal/api"
 	"chigua-backend/internal/middleware"
+	"chigua-backend/internal/model"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,7 +12,9 @@ func InitRouter(r *gin.Engine) {
 	apiGroup := r.Group("/api")
 
 	apiGroup.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "pong"})
+		c.JSON(int(model.Success), model.SuccessResponse(map[string]string{
+			"message": "Pong",
+		}))
 	})
 
 	// 用户路由

@@ -33,7 +33,7 @@ const news = ref([
     author: "TS爱好者",
     date: new Date("2026-04-09"),
     tags: ["TypeScript", "前端"]
-  },
+  }
 ])
 
 // 分页相关
