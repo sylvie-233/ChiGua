@@ -4,6 +4,9 @@ FROM golang:1.26.2 AS builder
 WORKDIR /app
 
 COPY go.mod go.sum ./
+ENV GOPROXY=https://goproxy.cn,direct
+ENV GOSUMDB=off
+ENV CGO_ENABLED=0
 RUN go mod download
 
 COPY . .

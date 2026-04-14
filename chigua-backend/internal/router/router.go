@@ -18,7 +18,7 @@ func InitRouter(r *gin.Engine) {
 	})
 
 	// 用户路由
-	users := apiGroup.Group("/users")
+	users := apiGroup.Group("/user")
 	{
 		users.POST("/register", api.Register)
 		users.POST("/login", api.Login)
@@ -26,7 +26,7 @@ func InitRouter(r *gin.Engine) {
 	}
 
 	// 文章路由
-	articles := apiGroup.Group("/articles")
+	articles := apiGroup.Group("/article")
 	{
 		articles.POST("", middleware.AuthMiddleware(), api.CreateArticle)
 		articles.GET("", api.GetArticleList)
@@ -37,7 +37,7 @@ func InitRouter(r *gin.Engine) {
 	}
 
 	// 评论路由
-	comments := apiGroup.Group("/comments")
+	comments := apiGroup.Group("/comment")
 	{
 		comments.POST("", middleware.AuthMiddleware(), api.CreateComment)
 		comments.GET("/article/:id", api.GetCommentsByArticleID)
@@ -45,7 +45,7 @@ func InitRouter(r *gin.Engine) {
 	}
 
 	// 分类路由
-	categories := apiGroup.Group("/categories")
+	categories := apiGroup.Group("/categorie")
 	{
 		categories.POST("", middleware.AuthMiddleware(), api.CreateCategory)
 		categories.GET("", api.GetAllCategories)
@@ -53,7 +53,7 @@ func InitRouter(r *gin.Engine) {
 	}
 
 	// 标签路由
-	tags := apiGroup.Group("/tags")
+	tags := apiGroup.Group("/tag")
 	{
 		tags.POST("", middleware.AuthMiddleware(), api.CreateTag)
 		tags.GET("", api.GetAllTags)

@@ -39,6 +39,16 @@ services:
       - backend-logs:/app/logs
     networks:
       - chigua-net
+  frontend:
+    build:
+      context: ../chigua-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - chigua-net
 
 volumes:
   pgdata:

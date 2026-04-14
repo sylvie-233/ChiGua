@@ -5,6 +5,7 @@ import NewsCard from "@/components/NewsCard.vue"
 import Pagination from "@/components/Pagination.vue"
 import SectionDesc from "@/components/SectionDesc.vue"
 import { getRandomImages } from "@/utils/randomImage"
+import { getArticleList } from "@/services/article"
 
 // 模拟数据
 const news = ref([
@@ -47,9 +48,10 @@ const handlePageChange = (page: number) => {
   console.log(`切换到第${page}页`)
 }
 
-onMounted(() => {
+onMounted(async () => {
   // 这里可以调用API获取真实数据
-  console.log("HomeView mounted")
+  const res = await getArticleList({ page: 1, pageSize: 10 })
+  console.log(res)
 })
 </script>
 

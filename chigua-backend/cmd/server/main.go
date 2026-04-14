@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -53,6 +54,15 @@ func main() {
 	r := gin.New()
 	// 添加Recovery中间件，捕获panic并恢复
 	r.Use(gin.Recovery())
+	// 添加CORS中间件
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 	// 添加自定义日志中间件
 	r.Use(middleware.LoggerMiddleware())
 
