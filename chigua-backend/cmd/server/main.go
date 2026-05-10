@@ -38,7 +38,6 @@ func main() {
 	}()
 
 	// 初始化数据库连接
-	// if err := database.InitDatabase(); err != nil {
 	if err := database.InitDatabase(); err != nil {
 		logger.Fatalf("初始化数据库失败: %v", err)
 	}

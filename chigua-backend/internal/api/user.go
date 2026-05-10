@@ -4,6 +4,7 @@ import (
 	"chigua-backend/internal/model"
 	"chigua-backend/internal/service"
 	"chigua-backend/utils/jwt"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,11 +18,15 @@ func Register(c *gin.Context) {
 
 	user, err := service.RegisterUser(userRegister)
 	if err != nil {
+		if errors.Is(err, service.ErrUserExists) {
+			c.JSON(int(model.UserExists), model.ErrorResponse(model.UserExists))
+			return
+		}
 		c.JSON(int(model.BadRequest), model.ErrorResponse(model.InvalidParams))
 		return
 	}
 
-	c.JSON(int(model.Success), model.SuccessResponse(user))
+	c.JSON(int(model.Success), model.SuccessResponse(user.ToResponse()))
 }
 
 func Login(c *gin.Context) {
@@ -60,5 +65,5 @@ func GetCurrentUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(int(model.Success), model.SuccessResponse(user))
+	c.JSON(int(model.Success), model.SuccessResponse(user.ToResponse()))
 }

@@ -12,6 +12,17 @@ type User struct {
 	UpdateAt  time.Time `json:"updateAt" db:"update_at"`
 }
 
+// ToResponse 将 User 转换为 UserResponse，不包含密码字段
+func (u *User) ToResponse() *UserResponse {
+	return &UserResponse{
+		ID:        u.ID,
+		Username:  u.Username,
+		Nickname:  u.Nickname,
+		Role:      u.Role,
+		CreatedAt: u.CreatedAt,
+	}
+}
+
 type UserRegister struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`

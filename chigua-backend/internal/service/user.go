@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var ErrUserExists = errors.New("用户名已存在")
+
 func RegisterUser(user model.UserRegister) (*model.User, error) {
 	// 检查用户名是否已存在
 	var count int
@@ -17,7 +19,7 @@ func RegisterUser(user model.UserRegister) (*model.User, error) {
 		return nil, err
 	}
 	if count > 0 {
-		return nil, errors.New("用户名已存在")
+		return nil, ErrUserExists
 	}
 
 	// 密码加密
@@ -46,7 +48,7 @@ func RegisterUser(user model.UserRegister) (*model.User, error) {
 	return &newUser, nil
 }
 
-func LoginUser(login model.UserLogin) (*model.User, error) {
+func LoginUser(login model.UserLogin) (*model.UserResponse, error) {
 	// 密码加密
 	hasher := sha256.New()
 	hasher.Write([]byte(login.Password))
@@ -60,7 +62,8 @@ func LoginUser(login model.UserLogin) (*model.User, error) {
 		return nil, errors.New("用户名或密码错误")
 	}
 
-	return &user, nil
+	// 使用 ToResponse 方法转换
+	return user.ToResponse(), nil
 }
 
 func GetUserByID(id int64) (*model.User, error) {
