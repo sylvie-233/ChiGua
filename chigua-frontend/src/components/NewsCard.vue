@@ -2,6 +2,7 @@
 import { formatDateWithChinese } from "@/utils/dateFormat"
 
 interface Props {
+  id: number
   title: string
   images: string[]
   author: string
@@ -13,11 +14,20 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   isHot: false
 })
+
+const emit = defineEmits<{
+  (e: 'click', id: number): void
+}>()
+
+const handleClick = () => {
+  emit('click', props.id)
+}
 </script>
 
 <template>
   <div
-    class="relative h-75 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+    class="relative h-75 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
+    @click="handleClick"
   >
     <!-- 图片区域 -->
     <div class="absolute inset-0">

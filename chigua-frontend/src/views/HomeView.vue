@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue"
+import { useRouter } from "vue-router"
 
 import NewsCard from "@/components/NewsCard.vue"
 import Pagination from "@/components/Pagination.vue"
 import SectionDesc from "@/components/SectionDesc.vue"
 import { getRandomImages } from "@/utils/randomImage"
 import { getArticleList } from "@/services/article"
+
+const router = useRouter()
+
+const handleCardClick = (id: number) => {
+  router.push(`/article/${id}`)
+}
 
 // 模拟数据
 const news = ref([
@@ -67,12 +74,14 @@ onMounted(async () => {
           <NewsCard
             v-for="item in news"
             :key="item.id"
+            :id="item.id"
             :title="item.title"
             :images="item.images"
             :author="item.author"
             :date="item.date"
             :tags="item.tags"
             :is-hot="item.isHot"
+            @click="handleCardClick"
           />
         </div>
 
