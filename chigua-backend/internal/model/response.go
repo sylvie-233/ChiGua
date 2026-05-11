@@ -37,8 +37,9 @@ const (
 	TokenExpired     ResponseCode = 1004
 	TokenInvalid     ResponseCode = 1005
 	ArticleNotFound  ResponseCode = 2000
-	CategoryNotFound ResponseCode = 2001
-	TagNotFound      ResponseCode = 2002
+	CategoryExists   ResponseCode = 2001
+	CategoryNotFound ResponseCode = 2002
+	TagNotFound      ResponseCode = 2003
 )
 
 // GetMsg 获取响应码对应的消息
@@ -82,6 +83,8 @@ func (c ResponseCode) GetMsg() string {
 		return "令牌无效"
 	case ArticleNotFound:
 		return "文章不存在"
+	case CategoryExists:
+		return "分类已存在"
 	case CategoryNotFound:
 		return "分类不存在"
 	case TagNotFound:

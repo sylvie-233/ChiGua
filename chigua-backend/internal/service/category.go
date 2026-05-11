@@ -3,10 +3,24 @@ package service
 import (
 	"chigua-backend/database"
 	"chigua-backend/internal/model"
+	"errors"
 	"time"
 )
 
+var ErrCategoryExists = errors.New("分类名称已存在")
+
 func CreateCategory(category model.CategoryCreate) (*model.Category, error) {
+	// 检查名称是否已存在
+	var exists bool
+	checkQuery := `SELECT EXISTS(SELECT 1 FROM category WHERE name = $1)`
+	err := database.DB.QueryRow(checkQuery, category.Name).Scan(&exists)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, ErrCategoryExists
+	}
+
 	now := time.Now()
 	newCategory := model.Category{
 		Name:      category.Name,
@@ -16,7 +30,7 @@ func CreateCategory(category model.CategoryCreate) (*model.Category, error) {
 
 	// 插入分类
 	query := `INSERT INTO category (name, created_at, update_at) VALUES ($1, $2, $3) RETURNING id`
-	err := database.DB.QueryRow(query, newCategory.Name, newCategory.CreatedAt, newCategory.UpdateAt).Scan(&newCategory.ID)
+	err = database.DB.QueryRow(query, newCategory.Name, newCategory.CreatedAt, newCategory.UpdateAt).Scan(&newCategory.ID)
 	if err != nil {
 		return nil, err
 	}
