@@ -14,8 +14,6 @@ bin/
 *.dylib
 
 # 忽略IDE文件
-.vscode/
-.idea/
 *.swp
 *.swo
 *~

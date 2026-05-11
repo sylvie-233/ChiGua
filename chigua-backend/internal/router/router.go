@@ -34,6 +34,7 @@ func InitRouter(r *gin.Engine) {
 		articles.PUT("/:id", middleware.AuthMiddleware(), api.UpdateArticle)
 		articles.DELETE("/:id", middleware.AuthMiddleware(), api.DeleteArticle)
 		articles.POST("/:id/publish", middleware.AuthMiddleware(), api.PublishArticle)
+		articles.PUT("/:id/status", middleware.AuthMiddleware(), api.UpdateArticleStatus)
 	}
 
 	// 评论路由

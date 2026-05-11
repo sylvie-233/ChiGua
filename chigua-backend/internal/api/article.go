@@ -4,6 +4,7 @@ import (
 	"chigua-backend/internal/model"
 	"chigua-backend/internal/service"
 	"chigua-backend/utils/logger"
+	"errors"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -87,9 +88,18 @@ func UpdateArticle(c *gin.Context) {
 		return
 	}
 
+	if articleUpdate.Title == nil && articleUpdate.Content == nil && articleUpdate.CoverImage == nil && articleUpdate.CategoryID == nil && articleUpdate.TagIDs == nil {
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.InvalidParams))
+		return
+	}
+
 	article, err := service.UpdateArticle(id, articleUpdate, userID.(int64))
 	if err != nil {
-		c.JSON(int(model.BadRequest), model.ErrorResponse(model.InvalidParams))
+		if errors.Is(err, service.ErrArticleNoPermission) {
+			c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
+		} else {
+			c.JSON(int(model.NotFound), model.ErrorResponse(model.ArticleNotFound))
+		}
 		return
 	}
 
@@ -111,7 +121,11 @@ func DeleteArticle(c *gin.Context) {
 
 	err = service.DeleteArticle(id, userID.(int64))
 	if err != nil {
-		c.JSON(int(model.BadRequest), model.ErrorResponse(model.InvalidParams))
+		if errors.Is(err, service.ErrArticleNoPermission) {
+			c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
+		} else {
+			c.JSON(int(model.NotFound), model.ErrorResponse(model.ArticleNotFound))
+		}
 		return
 	}
 
@@ -133,7 +147,43 @@ func PublishArticle(c *gin.Context) {
 
 	err = service.PublishArticle(id, userID.(int64))
 	if err != nil {
-		c.JSON(int(model.BadRequest), model.ErrorResponse(model.InvalidParams))
+		if errors.Is(err, service.ErrArticleNoPermission) {
+			c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
+		} else {
+			c.JSON(int(model.NotFound), model.ErrorResponse(model.ArticleNotFound))
+		}
+		return
+	}
+
+	c.JSON(int(model.Success), model.SuccessResponse(nil))
+}
+
+func UpdateArticleStatus(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(int(model.Unauthorized), model.ErrorResponse(model.Unauthorized))
+		return
+	}
+
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
+		return
+	}
+
+	var statusUpdate model.ArticleStatusUpdate
+	if err := c.ShouldBindJSON(&statusUpdate); err != nil {
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
+		return
+	}
+
+	err = service.UpdateArticleStatus(id, userID.(int64), statusUpdate.Status)
+	if err != nil {
+		if errors.Is(err, service.ErrArticleNoPermission) {
+			c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
+		} else {
+			c.JSON(int(model.NotFound), model.ErrorResponse(model.ArticleNotFound))
+		}
 		return
 	}
 

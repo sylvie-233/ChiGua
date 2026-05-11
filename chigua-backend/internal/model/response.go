@@ -7,6 +7,16 @@ type Response struct {
 	Data interface{} `json:"data"`
 }
 
+// PageResponse 通用分页响应结构
+type PageResponse struct {
+	Total      int64 `json:"total"`      // 总记录数
+	Page       int   `json:"page"`       // 当前页码
+	PageSize   int   `json:"pageSize"`   // 每页大小
+	TotalPages int   `json:"totalPages"` // 总页数
+	HasNext    bool  `json:"hasNext"`    // 是否有下一页
+	HasPrev    bool  `json:"hasPrev"`    // 是否有上一页
+}
+
 // ResponseCode 响应码枚举
 type ResponseCode int
 

@@ -34,30 +34,34 @@ type ArticleCreate struct {
 }
 
 type ArticleUpdate struct {
-	Title      string  `json:"title"`
-	Content    string  `json:"content"`
-	CoverImage string  `json:"coverImage"`
-	CategoryID int64   `json:"categoryId"`
+	Title      *string `json:"title"`
+	Content    *string `json:"content"`
+	CoverImage *string `json:"coverImage"`
+	CategoryID *int64  `json:"categoryId"`
 	TagIDs     []int64 `json:"tagIds"`
 }
 
+type ArticleStatusUpdate struct {
+	Status int `json:"status" binding:"required"`
+}
+
 type ArticleResponse struct {
-	ID         int64     `json:"id"`
-	AuthorID   int64     `json:"authorId"`
-	CategoryID int64     `json:"categoryId"`
-	Title      string    `json:"title"`
-	Content    string    `json:"content"`
-	CoverImage string    `json:"coverImage"`
-	Status     int       `json:"status"`
-	PublishAt  time.Time `json:"publishAt"`
-	CreatedAt  time.Time `json:"createdAt"`
-	UpdateAt   time.Time `json:"updateAt"`
-	Tags       []Tag     `json:"tags"`
-	Category   Category  `json:"category"`
-	Author     User      `json:"author"`
+	ID         int64        `json:"id"`
+	AuthorID   int64        `json:"authorId"`
+	CategoryID int64        `json:"categoryId"`
+	Title      string       `json:"title"`
+	Content    string       `json:"content"`
+	CoverImage string       `json:"coverImage"`
+	Status     int          `json:"status"`
+	PublishAt  time.Time    `json:"publishAt"`
+	CreatedAt  time.Time    `json:"createdAt"`
+	UpdateAt   time.Time    `json:"updateAt"`
+	Tags       []Tag        `json:"tags"`
+	Category   Category     `json:"category"`
+	Author     UserResponse `json:"author"`
 }
 
 type ArticleList struct {
-	Total int64             `json:"total"`
-	Items []ArticleResponse `json:"items"`
+	PageResponse
+	Items []ArticleResponse `json:"items"` // 当前页数据
 }
