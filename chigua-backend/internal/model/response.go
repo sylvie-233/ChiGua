@@ -39,7 +39,8 @@ const (
 	ArticleNotFound  ResponseCode = 2000
 	CategoryExists   ResponseCode = 2001
 	CategoryNotFound ResponseCode = 2002
-	TagNotFound      ResponseCode = 2003
+	TagExists        ResponseCode = 2003
+	TagNotFound      ResponseCode = 2004
 )
 
 // GetMsg 获取响应码对应的消息
@@ -87,6 +88,8 @@ func (c ResponseCode) GetMsg() string {
 		return "分类已存在"
 	case CategoryNotFound:
 		return "分类不存在"
+	case TagExists:
+		return "标签已存在"
 	case TagNotFound:
 		return "标签不存在"
 	default:

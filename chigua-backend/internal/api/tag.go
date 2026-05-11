@@ -3,6 +3,7 @@ package api
 import (
 	"chigua-backend/internal/model"
 	"chigua-backend/internal/service"
+	"errors"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +18,11 @@ func CreateTag(c *gin.Context) {
 
 	tag, err := service.CreateTag(tagCreate)
 	if err != nil {
-		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
+		if errors.Is(err, service.ErrTagExists) {
+			c.JSON(int(model.BadRequest), model.ErrorResponse(model.TagExists))
+			return
+		}
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.InvalidParams))
 		return
 	}
 
