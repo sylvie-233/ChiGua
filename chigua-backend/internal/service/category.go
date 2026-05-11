@@ -3,6 +3,7 @@ package service
 import (
 	"chigua-backend/database"
 	"chigua-backend/internal/model"
+	"chigua-backend/internal/sql"
 	"errors"
 	"time"
 )
@@ -10,10 +11,8 @@ import (
 var ErrCategoryExists = errors.New("分类名称已存在")
 
 func CreateCategory(category model.CategoryCreate) (*model.Category, error) {
-	// 检查名称是否已存在
 	var exists bool
-	checkQuery := `SELECT EXISTS(SELECT 1 FROM category WHERE name = $1)`
-	err := database.DB.QueryRow(checkQuery, category.Name).Scan(&exists)
+	err := database.DB.QueryRow(sql.CategoryCheckExists, category.Name).Scan(&exists)
 	if err != nil {
 		return nil, err
 	}
@@ -28,9 +27,7 @@ func CreateCategory(category model.CategoryCreate) (*model.Category, error) {
 		UpdateAt:  now,
 	}
 
-	// 插入分类
-	query := `INSERT INTO category (name, created_at, update_at) VALUES ($1, $2, $3) RETURNING id`
-	err = database.DB.QueryRow(query, newCategory.Name, newCategory.CreatedAt, newCategory.UpdateAt).Scan(&newCategory.ID)
+	err = database.DB.QueryRow(sql.CategoryInsert, newCategory.Name, newCategory.CreatedAt, newCategory.UpdateAt).Scan(&newCategory.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -40,12 +37,11 @@ func CreateCategory(category model.CategoryCreate) (*model.Category, error) {
 
 func GetAllCategories() ([]model.Category, error) {
 	var categories []model.Category
-	err := database.DB.Select(&categories, "SELECT id, name, created_at, update_at FROM category ORDER BY created_at DESC")
+	err := database.DB.Select(&categories, sql.CategorySelectAll)
 	return categories, err
 }
 
 func DeleteCategory(id int64) error {
-	// 删除分类
-	_, err := database.DB.Exec(`DELETE FROM category WHERE id = $1`, id)
+	_, err := database.DB.Exec(sql.CategoryDelete, id)
 	return err
 }

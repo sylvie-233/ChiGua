@@ -2,6 +2,16 @@ package model
 
 import "time"
 
+// ArticleStatus 文章状态常量
+type ArticleStatus int
+
+const (
+	ArticleStatusDraft       ArticleStatus = 0 // 草稿/未发布
+	ArticleStatusPublished   ArticleStatus = 1 // 已发布
+	ArticleStatusUnpublished ArticleStatus = 2 // 已下架/撤回
+	ArticleStatusPending     ArticleStatus = 3 // 审核中
+)
+
 type Article struct {
 	ID         int64     `json:"id" db:"id"`
 	AuthorID   int64     `json:"authorId" db:"author_id"`
@@ -16,18 +26,18 @@ type Article struct {
 }
 
 type ArticleCreate struct {
-	Title      string `json:"title" binding:"required"`
-	Content    string `json:"content"`
-	CoverImage string `json:"coverImage"`
-	CategoryID int64  `json:"categoryId" binding:"required"`
+	Title      string  `json:"title" binding:"required"`
+	Content    string  `json:"content"`
+	CoverImage string  `json:"coverImage"`
+	CategoryID int64   `json:"categoryId" binding:"required"`
 	TagIDs     []int64 `json:"tagIds"`
 }
 
 type ArticleUpdate struct {
-	Title      string `json:"title"`
-	Content    string `json:"content"`
-	CoverImage string `json:"coverImage"`
-	CategoryID int64  `json:"categoryId"`
+	Title      string  `json:"title"`
+	Content    string  `json:"content"`
+	CoverImage string  `json:"coverImage"`
+	CategoryID int64   `json:"categoryId"`
 	TagIDs     []int64 `json:"tagIds"`
 }
 
@@ -48,6 +58,6 @@ type ArticleResponse struct {
 }
 
 type ArticleList struct {
-	Total int64            `json:"total"`
+	Total int64             `json:"total"`
 	Items []ArticleResponse `json:"items"`
 }
