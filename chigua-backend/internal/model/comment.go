@@ -20,13 +20,39 @@ type CommentCreate struct {
 }
 
 type CommentResponse struct {
-	ID          int64     `json:"id"`
-	ParentID    int64     `json:"parentId"`
-	ArticleID   int64     `json:"articleId"`
-	ReplyUserID int64     `json:"replyUserId"`
-	UserID      int64     `json:"userId"`
-	Content     string    `json:"content"`
-	CreatedAt   time.Time `json:"createdAt"`
-	User        User      `json:"user"`
-	ReplyUser   *User     `json:"replyUser"`
+	ID          int64         `json:"id"`
+	ParentID    int64         `json:"parentId"`
+	ArticleID   int64         `json:"articleId"`
+	ReplyUserID int64         `json:"replyUserId"`
+	UserID      int64         `json:"userId"`
+	Content     string        `json:"content"`
+	CreatedAt   time.Time     `json:"createdAt"`
+	User        *UserResponse `json:"user"`
+	ReplyUser   *UserResponse `json:"replyUser"`
+}
+
+// SecondLevelCommentList 二级评论分页列表
+type SecondLevelCommentList struct {
+	PageResponse
+	Items []CommentResponse `json:"items"` // 当前页二级评论数据
+}
+
+// CommentWithChildren 带二级评论的响应结构
+type CommentWithChildren struct {
+	ID          int64                  `json:"id"`
+	ParentID    int64                  `json:"parentId"`
+	ArticleID   int64                  `json:"articleId"`
+	ReplyUserID int64                  `json:"replyUserId"`
+	UserID      int64                  `json:"userId"`
+	Content     string                 `json:"content"`
+	CreatedAt   time.Time              `json:"createdAt"`
+	User        *UserResponse          `json:"user"`
+	ReplyUser   *UserResponse          `json:"replyUser"`
+	Children    SecondLevelCommentList `json:"children"` // 二级评论分页列表
+}
+
+// CommentListResponse 评论列表响应（与文章分页结构一致）
+type CommentListResponse struct {
+	PageResponse
+	Items []CommentWithChildren `json:"items"` // 当前页数据
 }

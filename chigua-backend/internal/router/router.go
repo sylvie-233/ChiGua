@@ -41,7 +41,8 @@ func InitRouter(r *gin.Engine) {
 	comments := apiGroup.Group("/comment")
 	{
 		comments.POST("", middleware.AuthMiddleware(), api.CreateComment)
-		comments.GET("/article/:id", api.GetCommentsByArticleID)
+		comments.GET("/article/:id", api.GetCommentsWithPagination)           // 两级评论分页列表
+		comments.GET("/article/:id/children", api.GetMoreSecondLevelComments) // 获取更多二级评论
 		comments.DELETE("/:id", middleware.AuthMiddleware(), api.DeleteComment)
 	}
 
