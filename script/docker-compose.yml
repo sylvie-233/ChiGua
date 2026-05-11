@@ -25,6 +25,35 @@ services:
       retries: 10
       start_period: 10s
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: always
+    ports:
+      # API 端口（后端上传文件用这个）
+      - "9000:9000"
+      # 控制台 Web 端口（浏览器管理文件用）
+      - "9001:9001"
+    environment:
+      # 登录密钥（后端代码里填这两个）
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minio123456
+      # 开启控制台端口
+      MINIO_CONSOLE_ADDRESS: :9001
+    volumes:
+      # 数据持久化（重启不丢文件）
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - chigua-net
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   backend:
     build:
       context: ../chigua-backend
@@ -54,6 +83,8 @@ volumes:
   pgdata:
     driver: local
   backend-logs:
+    driver: local
+  minio-data:
     driver: local
 
 networks:

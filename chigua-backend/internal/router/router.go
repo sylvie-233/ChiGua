@@ -60,4 +60,13 @@ func InitRouter(r *gin.Engine) {
 		tags.GET("", api.GetAllTags)
 		tags.DELETE("/:id", middleware.AuthMiddleware(), api.DeleteTag)
 	}
+
+	// 文件上传路由
+	upload := apiGroup.Group("/upload")
+	{
+		upload.POST("/file", middleware.AuthMiddleware(), api.UploadFile)
+		upload.POST("/files", middleware.AuthMiddleware(), api.UploadFiles)
+		upload.GET("/*filepath", api.GetFile)
+		upload.DELETE("/file", middleware.AuthMiddleware(), api.DeleteFile)
+	}
 }

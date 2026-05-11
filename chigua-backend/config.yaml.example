@@ -11,6 +11,13 @@ server:
   # jwt密钥
   secret: chigua-secret-key
 
+# 日志配置
+logger:
+  # 日志级别: debug, info, warn, error
+  level: info
+  # 日志文件路径
+  log_file: logs/app.log
+
 # 数据库配置
 database:
   # 数据库主机
@@ -26,9 +33,21 @@ database:
   # SSL模式: disable, require, verify-ca, verify-full
   sslmode: disable
 
-# 日志配置
-logger:
-  # 日志级别: debug, info, warn, error
-  level: info
-  # 日志文件路径
-  log_file: logs/app.log
+# MinIO配置
+minio:
+  # MinIO服务地址
+  endpoint: localhost:9000
+  # 访问密钥
+  access_key_id: minioadmin
+  # 秘密密钥
+  secret_access_key: minio123456
+  # 是否使用SSL
+  use_ssl: false
+  # Bucket名称
+  bucket_name: chigua
+  # 文件类型目录映射
+  file_type_paths:
+    image: images
+    video: videos
+    audio: audios
+    default: others

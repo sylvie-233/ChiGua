@@ -7,6 +7,7 @@ import (
 	"chigua-backend/internal/router"
 	"chigua-backend/utils/ip2region"
 	"chigua-backend/utils/logger"
+	"chigua-backend/utils/minio"
 	"context"
 	"fmt"
 	"net/http"
@@ -42,6 +43,11 @@ func main() {
 		logger.Fatalf("初始化数据库失败: %v", err)
 	}
 	defer database.CloseDatabase()
+
+	// 初始化MinIO
+	if err := minio.InitMinIO(); err != nil {
+		logger.Fatalf("初始化MinIO失败: %v", err)
+	}
 
 	// 初始化IP2Region
 	ip2region.InitIp2Region()

@@ -12,6 +12,7 @@ type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 	Logger   LoggerConfig
+	MinIO    MinIOConfig
 }
 
 // LoggerConfig 日志配置
@@ -37,6 +38,16 @@ type DatabaseConfig struct {
 	Password string `mapstructure:"password"`
 	DBName   string `mapstructure:"dbname"`
 	SSLMode  string `mapstructure:"sslmode"`
+}
+
+// MinIOConfig MinIO配置
+type MinIOConfig struct {
+	Endpoint        string            `mapstructure:"endpoint"`
+	AccessKeyID     string            `mapstructure:"access_key_id"`
+	SecretAccessKey string            `mapstructure:"secret_access_key"`
+	UseSSL          bool              `mapstructure:"use_ssl"`
+	BucketName      string            `mapstructure:"bucket_name"`
+	FileTypePaths   map[string]string `mapstructure:"file_type_paths"`
 }
 
 // AppConfig 全局配置实例
@@ -89,6 +100,19 @@ func setDefaultConfig() {
 	// 日志配置
 	viper.SetDefault("logger.level", "info")
 	viper.SetDefault("logger.log_file", "logs/app.log")
+
+	// MinIO配置
+	viper.SetDefault("minio.endpoint", "minio:9000")
+	viper.SetDefault("minio.access_key_id", "minioadmin")
+	viper.SetDefault("minio.secret_access_key", "minio123456")
+	viper.SetDefault("minio.use_ssl", false)
+	viper.SetDefault("minio.bucket_name", "chigua")
+	viper.SetDefault("minio.file_type_paths", map[string]string{
+		"image":   "images",
+		"video":   "videos",
+		"audio":   "audios",
+		"default": "others",
+	})
 }
 
 // loadConfigFile 加载配置文件
