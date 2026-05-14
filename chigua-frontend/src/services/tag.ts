@@ -1,34 +1,21 @@
 import api from "./client"
-import type { ApiResponse, Tag } from "@/types/api"
-import { USE_MOCK, mockTags, mockSuccess } from "./mock"
+import type { ApiResponse } from "@/types/api"
+import type { Tag } from "@/types/tag"
 
-// 标签相关API
-export const createTag = (data: {
-  name: string
-}): Promise<ApiResponse<Tag>> => {
-  if (USE_MOCK) {
-    return Promise.resolve(
-      mockSuccess({
-        id: Date.now(),
-        name: data.name,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-    )
-  }
-  return api.post("/tag", data)
-}
+export const tagApi = {
+  getAllTags() {
+    return api.get<ApiResponse<Tag[]>>("/tag/list")
+  },
 
-export const getTagList = (): Promise<ApiResponse<Tag[]>> => {
-  if (USE_MOCK) {
-    return Promise.resolve(mockSuccess(mockTags))
-  }
-  return api.get("/tag")
-}
+  createTag(data: { name: string }) {
+    return api.post<ApiResponse<Tag>>("/tag", data)
+  },
 
-export const deleteTag = (id: number): Promise<ApiResponse<null>> => {
-  if (USE_MOCK) {
-    return Promise.resolve(mockSuccess(null))
+  updateTag(id: number, data: { name: string }) {
+    return api.put<ApiResponse<Tag>>(`/tag/${id}`, data)
+  },
+
+  deleteTag(id: number) {
+    return api.delete<ApiResponse<void>>(`/tag/${id}`)
   }
-  return api.delete(`/tag/${id}`)
 }

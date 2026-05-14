@@ -16,11 +16,11 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  (e: 'click', id: number): void
+  (e: "click", id: number): void
 }>()
 
 const handleClick = () => {
-  emit('click', props.id)
+  emit("click", props.id)
 }
 </script>
 

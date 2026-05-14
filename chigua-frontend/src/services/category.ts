@@ -1,34 +1,21 @@
 import api from "./client"
-import type { ApiResponse, Category } from "@/types/api"
-import { USE_MOCK, mockCategories, mockSuccess } from "./mock"
+import type { ApiResponse } from "@/types/api"
+import type { Category } from "@/types/category"
 
-// 分类相关API
-export const createCategory = (data: {
-  name: string
-}): Promise<ApiResponse<Category>> => {
-  if (USE_MOCK) {
-    return Promise.resolve(
-      mockSuccess({
-        id: Date.now(),
-        name: data.name,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-    )
-  }
-  return api.post("/category", data)
-}
+export const categoryApi = {
+  getAllCategories() {
+    return api.get<ApiResponse<Category[]>>("/category/list")
+  },
 
-export const getCategoryList = (): Promise<ApiResponse<Category[]>> => {
-  if (USE_MOCK) {
-    return Promise.resolve(mockSuccess(mockCategories))
-  }
-  return api.get("/category")
-}
+  createCategory(data: { name: string }) {
+    return api.post<ApiResponse<Category>>("/category", data)
+  },
 
-export const deleteCategory = (id: number): Promise<ApiResponse<null>> => {
-  if (USE_MOCK) {
-    return Promise.resolve(mockSuccess(null))
+  updateCategory(id: number, data: { name: string }) {
+    return api.put<ApiResponse<Category>>(`/category/${id}`, data)
+  },
+
+  deleteCategory(id: number) {
+    return api.delete<ApiResponse<void>>(`/category/${id}`)
   }
-  return api.delete(`/category/${id}`)
 }

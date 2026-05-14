@@ -66,3 +66,28 @@ func GetUserByID(id int64) (*model.User, error) {
 	}
 	return &user, nil
 }
+
+func UpdateUserNickname(userID int64, nickname string) error {
+	now := time.Now()
+	_, err := database.DB.Exec(sql.UserUpdateNickname, nickname, now, userID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateUser(userID int64, updates map[string]interface{}) error {
+	now := time.Now()
+
+	var nickname *string
+	if val, ok := updates["nickname"]; ok && val != nil {
+		nick := val.(string)
+		nickname = &nick
+	}
+
+	_, err := database.DB.Exec(sql.UserUpdate, nickname, now, userID)
+	if err != nil {
+		return err
+	}
+	return nil
+}

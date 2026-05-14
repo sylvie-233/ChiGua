@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue"
 import { useRouter } from "vue-router"
-
 import NewsCard from "@/components/NewsCard.vue"
 import Pagination from "@/components/Pagination.vue"
 import SectionDesc from "@/components/SectionDesc.vue"

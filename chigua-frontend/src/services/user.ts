@@ -1,46 +1,33 @@
 import api from "./client"
-import type { ApiResponse, User } from "@/types/api"
-import { USE_MOCK, mockUser, mockSuccess } from "./mock"
+import type { ApiResponse } from "@/types/api"
+import type { User } from "@/types/user"
 
-// 用户相关API
-export const register = (data: {
-  username: string
-  password: string
-  email: string
-}): Promise<ApiResponse<User>> => {
-  if (USE_MOCK) {
-    return Promise.resolve(
-      mockSuccess({
-        id: Date.now(),
-        username: data.username,
-        nickname: data.username,
-        email: data.email,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-    )
-  }
-  return api.post("/user/register", data)
+export interface LoginResponse {
+  token: string
+  user: User
 }
 
-export const login = (data: {
-  username: string
-  password: string
-}): Promise<ApiResponse<{ user: User; token: string }>> => {
-  if (USE_MOCK) {
-    return Promise.resolve(
-      mockSuccess({
-        user: mockUser,
-        token: "mock-jwt-token"
-      })
-    )
-  }
-  return api.post("/user/login", data)
-}
+export const userApi = {
+  register(data: {
+    username: string
+    password: string
+    nickname: string
+  }): Promise<ApiResponse<User>> {
+    return api.post("/user/register", data)
+  },
 
-export const getCurrentUser = (): Promise<ApiResponse<User>> => {
-  if (USE_MOCK) {
-    return Promise.resolve(mockSuccess(mockUser))
+  login(data: {
+    username: string
+    password: string
+  }): Promise<ApiResponse<LoginResponse>> {
+    return api.post("/user/login", data)
+  },
+
+  getProfile(): Promise<ApiResponse<User>> {
+    return api.get("/user/me")
+  },
+
+  updateProfile(data: Partial<User>): Promise<ApiResponse<string>> {
+    return api.put("/user/me", data)
   }
-  return api.get("/user/current")
 }

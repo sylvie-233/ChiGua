@@ -23,6 +23,7 @@ func InitRouter(r *gin.Engine) {
 		users.POST("/register", api.Register)
 		users.POST("/login", api.Login)
 		users.GET("/me", middleware.AuthMiddleware(), api.GetCurrentUser)
+		users.PUT("/me", middleware.AuthMiddleware(), api.UpdateUser)
 	}
 
 	// 文章路由

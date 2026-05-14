@@ -1,78 +1,55 @@
 import api from "./client"
-import type { ApiResponse, Article } from "@/types/api"
-import { USE_MOCK, mockArticles, mockSuccess } from "./mock"
+import type { ApiResponse } from "@/types/api"
+import type { Article } from "@/types/article"
 
-// 文章相关API
-export const createArticle = (data: any): Promise<ApiResponse<Article>> => {
-  if (USE_MOCK) {
-    return Promise.resolve(
-      mockSuccess({
-        id: Date.now(),
-        title: data.title,
-        content: data.content,
-        status: 0,
-        author_id: 1,
-        author: {
-          id: 1,
-          username: "zhangsan",
-          nickname: "张三",
-          email: "zhangsan@example.com",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        category_id: data.category_id || 1,
-        category: { id: 1, name: "科技", created_at: "", updated_at: "" },
-        tags: [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-    )
+export const articleApi = {
+  getArticleList(params: {
+    page: number
+    pageSize: number
+    categoryId?: number
+  }) {
+    return api.get<
+      ApiResponse<{
+        items: Article[]
+        total: number
+        page: number
+        pageSize: number
+      }>
+    >("/article/list", {
+      params
+    })
+  },
+
+  getArticleById(id: number) {
+    return api.get<ApiResponse<Article>>(`/article/${id}`)
+  },
+
+  createArticle(data: {
+    title: string
+    content: string
+    category_id: number
+    tag_ids?: number[]
+  }) {
+    return api.post<ApiResponse<Article>>("/article", data)
+  },
+
+  updateArticle(
+    id: number,
+    data: {
+      title?: string
+      content?: string
+      category_id?: number
+      tag_ids?: number[]
+    }
+  ) {
+    return api.put<ApiResponse<Article>>(`/article/${id}`, data)
+  },
+
+  deleteArticle(id: number) {
+    return api.delete<ApiResponse<void>>(`/article/${id}`)
   }
-  return api.post("/article", data)
 }
 
-export const getArticleList = (params: {
-  page: number
-  pageSize: number
-}): Promise<ApiResponse<Article[]>> => {
-  if (USE_MOCK) {
-    const start = (params.page - 1) * params.pageSize
-    const end = start + params.pageSize
-    const paginatedArticles = mockArticles.slice(start, end)
-    return Promise.resolve(mockSuccess(paginatedArticles))
-  }
-  return api.get("/article", { params })
-}
-
-export const getArticle = (id: number): Promise<ApiResponse<Article>> => {
-  if (USE_MOCK) {
-    const article = mockArticles.find(a => a.id === id) || mockArticles[0]
-    return Promise.resolve(mockSuccess(article))
-  }
-  return api.get(`/article/${id}`)
-}
-
-export const updateArticle = (
-  id: number,
-  data: any
-): Promise<ApiResponse<Article>> => {
-  if (USE_MOCK) {
-    const article = mockArticles.find(a => a.id === id) || mockArticles[0]
-    return Promise.resolve(mockSuccess({ ...article, ...data }))
-  }
-  return api.put(`/article/${id}`, data)
-}
-
-export const deleteArticle = (id: number): Promise<ApiResponse<null>> => {
-  if (USE_MOCK) {
-    return Promise.resolve(mockSuccess(null))
-  }
-  return api.delete(`/article/${id}`)
-}
-
-export const publishArticle = (id: number): Promise<ApiResponse<null>> => {
-  if (USE_MOCK) {
-    return Promise.resolve(mockSuccess(null))
-  }
-  return api.put(`/article/${id}/publish`)
-}
+// 兼容旧的方法名
+export const getArticleList = articleApi.getArticleList
+export const getArticle = articleApi.getArticleById

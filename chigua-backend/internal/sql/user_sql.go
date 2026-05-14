@@ -13,3 +13,9 @@ const UserSelectByUP = `SELECT id, username, password, nickname, role, created_a
 
 // UserSelectByID 按ID查询用户
 const UserSelectByID = `SELECT id, username, password, nickname, role, created_at, update_at FROM users WHERE id = $1`
+
+// UserUpdateNickname 更新用户昵称
+const UserUpdateNickname = `UPDATE users SET nickname = $1, update_at = $2 WHERE id = $3`
+
+// UserUpdate 更新用户信息
+const UserUpdate = `UPDATE users SET nickname = COALESCE($1, nickname), update_at = $2 WHERE id = $3`

@@ -19,7 +19,7 @@ func Register(c *gin.Context) {
 	user, err := service.RegisterUser(userRegister)
 	if err != nil {
 		if errors.Is(err, service.ErrUserExists) {
-			c.JSON(int(model.UserExists), model.ErrorResponse(model.UserExists))
+			c.JSON(int(model.BadRequest), model.ErrorResponse(model.UserExists))
 			return
 		}
 		c.JSON(int(model.BadRequest), model.ErrorResponse(model.InvalidParams))
@@ -66,4 +66,25 @@ func GetCurrentUser(c *gin.Context) {
 	}
 
 	c.JSON(int(model.Success), model.SuccessResponse(user.ToResponse()))
+}
+
+func UpdateUser(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(int(model.Unauthorized), model.ErrorResponse(model.Unauthorized))
+		return
+	}
+
+	var updateData map[string]interface{}
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.InvalidParams))
+		return
+	}
+
+	if err := service.UpdateUser(userID.(int64), updateData); err != nil {
+		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
+		return
+	}
+
+	c.JSON(int(model.Success), model.SuccessResponse("更新成功"))
 }

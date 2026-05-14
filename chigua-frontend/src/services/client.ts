@@ -1,4 +1,5 @@
 import axios from "axios"
+import NProgress from "nprogress"
 
 // 创建axios实例
 const api = axios.create({
@@ -14,14 +15,26 @@ const api = axios.create({
 // 请求拦截器
 api.interceptors.request.use(
   config => {
-    // 从localStorage获取token
-    const token = localStorage.getItem("token")
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    // 显示加载进度条
+    NProgress.start()
+
+    // 从Pinia持久化的存储中获取token
+    const authStore = localStorage.getItem("auth")
+    if (authStore) {
+      try {
+        const auth = JSON.parse(authStore)
+        if (auth.token) {
+          config.headers.Authorization = `Bearer ${auth.token}`
+        }
+      } catch (e) {
+        console.error("Failed to parse auth store:", e)
+      }
     }
     return config
   },
   error => {
+    // 隐藏加载进度条
+    NProgress.done()
     return Promise.reject(error)
   }
 )
@@ -29,12 +42,20 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   response => {
+    // 隐藏加载进度条
+    NProgress.done()
     // 统一处理响应格式
     return response.data
   },
   error => {
+    // 隐藏加载进度条
+    NProgress.done()
     // 统一处理错误
     console.error("API Error:", error)
+    // 如果后端返回了业务错误信息，也返回它
+    if (error.response && error.response.data) {
+      return Promise.resolve(error.response.data)
+    }
     return Promise.reject(error)
   }
 )

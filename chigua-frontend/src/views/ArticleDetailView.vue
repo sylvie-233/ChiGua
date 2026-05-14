@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from "vue"
 import { useRoute } from "vue-router"
 import { articleApi } from "@/services"
-import type { Article } from "@/types/api"
+import type { Article } from "@/types/article"
 import { renderMarkdown } from "@/utils/markdown"
 
 const route = useRoute()
@@ -24,11 +24,11 @@ onMounted(async () => {
   }
 
   try {
-    const response = await articleApi.getArticle(id)
-    if (response.code === 200) {
-      article.value = response.data
+    const response = await articleApi.articleApi.getArticleById(id)
+    if (response.data.code === 200) {
+      article.value = response.data.data
     } else {
-      error.value = response.msg || "获取文章失败"
+      error.value = response.data.msg || "获取文章失败"
     }
   } catch (err) {
     error.value = "获取文章失败"
@@ -59,7 +59,7 @@ onMounted(async () => {
         <!-- 标题 -->
         <header class="text-center border-b border-gray-700 pb-6">
           <h1
-            class="text-3xl md:text-4xl font-bold bg-linear-to-r from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent"
+            class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent"
           >
             {{ article.title }}
           </h1>
@@ -70,7 +70,7 @@ onMounted(async () => {
           class="flex items-center justify-center gap-4 py-4 bg-gray-800/50 rounded-lg px-6"
         >
           <div
-            class="w-12 h-12 bg-linear-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center"
+            class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center"
           >
             <span class="text-xl font-bold">{{
               article.author.username.charAt(0).toUpperCase()
