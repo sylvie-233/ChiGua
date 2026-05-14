@@ -24,11 +24,11 @@ onMounted(async () => {
   }
 
   try {
-    const response = await articleApi.articleApi.getArticleById(id)
-    if (response.data.code === 200) {
-      article.value = response.data.data
+    const response = await articleApi.getArticle(id)
+    if (response.code === 200) {
+      article.value = response.data
     } else {
-      error.value = response.data.msg || "获取文章失败"
+      error.value = response.msg || "获取文章失败"
     }
   } catch (err) {
     error.value = "获取文章失败"

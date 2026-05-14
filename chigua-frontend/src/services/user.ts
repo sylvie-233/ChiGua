@@ -1,5 +1,4 @@
-import api from "./client"
-import type { ApiResponse } from "@/types/api"
+import { typedApi } from "./client"
 import type { User } from "@/types/user"
 
 export interface LoginResponse {
@@ -8,26 +7,26 @@ export interface LoginResponse {
 }
 
 export const userApi = {
-  register(data: {
+  async register(data: {
     username: string
     password: string
     nickname: string
-  }): Promise<ApiResponse<User>> {
-    return api.post("/user/register", data)
+  }) {
+    return typedApi.post<User>("/user/register", data)
   },
 
-  login(data: {
+  async login(data: {
     username: string
     password: string
-  }): Promise<ApiResponse<LoginResponse>> {
-    return api.post("/user/login", data)
+  }) {
+    return typedApi.post<LoginResponse>("/user/login", data)
   },
 
-  getProfile(): Promise<ApiResponse<User>> {
-    return api.get("/user/me")
+  async getProfile() {
+    return typedApi.get<User>("/user/me")
   },
 
-  updateProfile(data: Partial<User>): Promise<ApiResponse<string>> {
-    return api.put("/user/me", data)
+  async updateProfile(data: Partial<User>) {
+    return typedApi.put<string>("/user/me", data)
   }
 }

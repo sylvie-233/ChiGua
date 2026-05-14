@@ -1,21 +1,20 @@
-import api from "./client"
-import type { ApiResponse } from "@/types/api"
+import { typedApi } from "./client"
 import type { Category } from "@/types/category"
 
 export const categoryApi = {
-  getAllCategories() {
-    return api.get<ApiResponse<Category[]>>("/category/list")
+  async getAllCategories() {
+    return typedApi.get<Category[]>("/category/list")
   },
 
-  createCategory(data: { name: string }) {
-    return api.post<ApiResponse<Category>>("/category", data)
+  async createCategory(data: { name: string }) {
+    return typedApi.post<Category>("/category", data)
   },
 
-  updateCategory(id: number, data: { name: string }) {
-    return api.put<ApiResponse<Category>>(`/category/${id}`, data)
+  async updateCategory(id: number, data: { name: string }) {
+    return typedApi.put<Category>(`/category/${id}`, data)
   },
 
-  deleteCategory(id: number) {
-    return api.delete<ApiResponse<void>>(`/category/${id}`)
+  async deleteCategory(id: number) {
+    return typedApi.delete<void>(`/category/${id}`)
   }
 }

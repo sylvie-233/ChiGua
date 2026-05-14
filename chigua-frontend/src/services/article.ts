@@ -1,39 +1,34 @@
-import api from "./client"
-import type { ApiResponse } from "@/types/api"
+import { typedApi } from "./client"
 import type { Article } from "@/types/article"
 
 export const articleApi = {
-  getArticleList(params: {
+  async getArticleList(params: {
     page: number
     pageSize: number
     categoryId?: number
   }) {
-    return api.get<
-      ApiResponse<{
-        items: Article[]
-        total: number
-        page: number
-        pageSize: number
-      }>
-    >("/article/list", {
-      params
-    })
+    return typedApi.get<{
+      items: Article[]
+      total: number
+      page: number
+      pageSize: number
+    }>("/article/list", { params })
   },
 
-  getArticleById(id: number) {
-    return api.get<ApiResponse<Article>>(`/article/${id}`)
+  async getArticleById(id: number) {
+    return typedApi.get<Article>(`/article/${id}`)
   },
 
-  createArticle(data: {
+  async createArticle(data: {
     title: string
     content: string
     category_id: number
     tag_ids?: number[]
   }) {
-    return api.post<ApiResponse<Article>>("/article", data)
+    return typedApi.post<Article>("/article", data)
   },
 
-  updateArticle(
+  async updateArticle(
     id: number,
     data: {
       title?: string
@@ -42,14 +37,13 @@ export const articleApi = {
       tag_ids?: number[]
     }
   ) {
-    return api.put<ApiResponse<Article>>(`/article/${id}`, data)
+    return typedApi.put<Article>(`/article/${id}`, data)
   },
 
-  deleteArticle(id: number) {
-    return api.delete<ApiResponse<void>>(`/article/${id}`)
+  async deleteArticle(id: number) {
+    return typedApi.delete<void>(`/article/${id}`)
   }
 }
 
-// 兼容旧的方法名
 export const getArticleList = articleApi.getArticleList
 export const getArticle = articleApi.getArticleById

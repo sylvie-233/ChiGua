@@ -1,7 +1,8 @@
 import axios from "axios"
+import type { AxiosRequestConfig } from "axios"
 import NProgress from "nprogress"
+import type { ApiResponse } from "@/types/api"
 
-// 创建axios实例
 const api = axios.create({
   baseURL:
     import.meta.env.VITE_API_BASE_URL ||
@@ -12,13 +13,9 @@ const api = axios.create({
   }
 })
 
-// 请求拦截器
 api.interceptors.request.use(
   config => {
-    // 显示加载进度条
     NProgress.start()
-
-    // 从Pinia持久化的存储中获取token
     const authStore = localStorage.getItem("auth")
     if (authStore) {
       try {
@@ -33,26 +30,19 @@ api.interceptors.request.use(
     return config
   },
   error => {
-    // 隐藏加载进度条
     NProgress.done()
     return Promise.reject(error)
   }
 )
 
-// 响应拦截器
 api.interceptors.response.use(
   response => {
-    // 隐藏加载进度条
     NProgress.done()
-    // 统一处理响应格式
     return response.data
   },
   error => {
-    // 隐藏加载进度条
     NProgress.done()
-    // 统一处理错误
     console.error("API Error:", error)
-    // 如果后端返回了业务错误信息，也返回它
     if (error.response && error.response.data) {
       return Promise.resolve(error.response.data)
     }
@@ -60,4 +50,27 @@ api.interceptors.response.use(
   }
 )
 
+interface TypedApi {
+  get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>>
+  post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>>
+  put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>>
+  delete<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>>
+}
+
+const typedApi: TypedApi = {
+  get<T>(url: string, config?: AxiosRequestConfig) {
+    return api.get<ApiResponse<T>>(url, config) as unknown as Promise<ApiResponse<T>>
+  },
+  post<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
+    return api.post<ApiResponse<T>>(url, data, config) as unknown as Promise<ApiResponse<T>>
+  },
+  put<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
+    return api.put<ApiResponse<T>>(url, data, config) as unknown as Promise<ApiResponse<T>>
+  },
+  delete<T>(url: string, config?: AxiosRequestConfig) {
+    return api.delete<ApiResponse<T>>(url, config) as unknown as Promise<ApiResponse<T>>
+  }
+}
+
+export { typedApi }
 export default api

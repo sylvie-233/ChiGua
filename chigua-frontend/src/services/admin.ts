@@ -1,5 +1,4 @@
-import api from "./client"
-import type { ApiResponse } from "@/types/api"
+import { typedApi } from "./client"
 import type { Article } from "@/types/article"
 import type { Category } from "@/types/category"
 import type { Tag } from "@/types/tag"
@@ -7,20 +6,12 @@ import type { Tag } from "@/types/tag"
 export const adminApi = {
   article: {
     async list(params: { page: number; pageSize: number }) {
-      const res = await api.get<
-        ApiResponse<{
-          items: Article[]
-          total: number
-          page: number
-          pageSize: number
-        }>
-      >("/article/list", { params })
-      return res as unknown as ApiResponse<{
+      return typedApi.get<{
         items: Article[]
         total: number
         page: number
         pageSize: number
-      }>
+      }>("/article/list", { params })
     },
     async create(data: {
       title: string
@@ -29,8 +20,7 @@ export const adminApi = {
       tag_ids?: number[]
       coverImage?: string
     }) {
-      const res = await api.post<ApiResponse<Article>>("/article", data)
-      return res as unknown as ApiResponse<Article>
+      return typedApi.post<Article>("/article", data)
     },
     async update(
       id: number,
@@ -42,58 +32,44 @@ export const adminApi = {
         coverImage?: string
       }
     ) {
-      const res = await api.put<ApiResponse<Article>>(`/article/${id}`, data)
-      return res as unknown as ApiResponse<Article>
+      return typedApi.put<Article>(`/article/${id}`, data)
     },
     async delete(id: number) {
-      const res = await api.delete<ApiResponse<void>>(`/article/${id}`)
-      return res as unknown as ApiResponse<void>
+      return typedApi.delete<void>(`/article/${id}`)
     },
     async publish(id: number) {
-      const res = await api.post<ApiResponse<void>>(`/article/${id}/publish`)
-      return res as unknown as ApiResponse<void>
+      return typedApi.post<void>(`/article/${id}/publish`)
     },
     async updateStatus(id: number, status: number) {
-      const res = await api.put<ApiResponse<void>>(`/article/${id}/status`, {
-        status
-      })
-      return res as unknown as ApiResponse<void>
+      return typedApi.put<void>(`/article/${id}/status`, { status })
     }
   },
   category: {
     async getAll() {
-      const res = await api.get<ApiResponse<Category[]>>("/categorie")
-      return res as unknown as ApiResponse<Category[]>
+      return typedApi.get<Category[]>("/categorie")
     },
     async create(data: { name: string }) {
-      const res = await api.post<ApiResponse<Category>>("/categorie", data)
-      return res as unknown as ApiResponse<Category>
+      return typedApi.post<Category>("/categorie", data)
     },
     async update(id: number, data: { name: string }) {
-      const res = await api.put<ApiResponse<Category>>(`/categorie/${id}`, data)
-      return res as unknown as ApiResponse<Category>
+      return typedApi.put<Category>(`/categorie/${id}`, data)
     },
     async delete(id: number) {
-      const res = await api.delete<ApiResponse<void>>(`/categorie/${id}`)
-      return res as unknown as ApiResponse<void>
+      return typedApi.delete<void>(`/categorie/${id}`)
     }
   },
   tag: {
     async getAll() {
-      const res = await api.get<ApiResponse<Tag[]>>("/tag")
-      return res as unknown as ApiResponse<Tag[]>
+      return typedApi.get<Tag[]>("/tag")
     },
     async create(data: { name: string }) {
-      const res = await api.post<ApiResponse<Tag>>("/tag", data)
-      return res as unknown as ApiResponse<Tag>
+      return typedApi.post<Tag>("/tag", data)
     },
     async update(id: number, data: { name: string }) {
-      const res = await api.put<ApiResponse<Tag>>(`/tag/${id}`, data)
-      return res as unknown as ApiResponse<Tag>
+      return typedApi.put<Tag>(`/tag/${id}`, data)
     },
     async delete(id: number) {
-      const res = await api.delete<ApiResponse<void>>(`/tag/${id}`)
-      return res as unknown as ApiResponse<void>
+      return typedApi.delete<void>(`/tag/${id}`)
     }
   }
 }
