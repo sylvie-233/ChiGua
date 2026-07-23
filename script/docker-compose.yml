@@ -74,8 +74,21 @@ services:
     build:
       context: ../chigua-frontend
       dockerfile: Dockerfile
+    container_name: frontend
     ports:
       - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - chigua-net
+
+  admin:
+    build:
+      context: ../chigua-admin
+      dockerfile: Dockerfile
+    container_name: admin
+    ports:
+      - "8081:80"
     depends_on:
       - backend
     networks:

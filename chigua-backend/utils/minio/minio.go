@@ -116,7 +116,11 @@ func BuildFileURL(objectPath string) string {
 	if cfg.UseSSL {
 		protocol = "https"
 	}
-	return fmt.Sprintf("%s://%s/%s/%s", protocol, cfg.Endpoint, cfg.BucketName, objectPath)
+	endpoint := cfg.PublicEndpoint
+	if endpoint == "" {
+		endpoint = cfg.Endpoint
+	}
+	return fmt.Sprintf("%s://%s/%s/%s", protocol, endpoint, cfg.BucketName, objectPath)
 }
 
 // GetObjectPath 生成对象存储路径（格式：目录/原文件名_时间戳.扩展名）

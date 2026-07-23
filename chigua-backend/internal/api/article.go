@@ -177,6 +177,11 @@ func UpdateArticleStatus(c *gin.Context) {
 		return
 	}
 
+	if statusUpdate.Status < 0 || statusUpdate.Status > 3 {
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
+		return
+	}
+
 	err = service.UpdateArticleStatus(id, userID.(int64), statusUpdate.Status)
 	if err != nil {
 		if errors.Is(err, service.ErrArticleNoPermission) {

@@ -10,7 +10,8 @@ COPY package.json pnpm-lock.yaml ./
 RUN npm config set registry https://registry.npmmirror.com
 RUN npm install -g pnpm
 # 安装依赖
-RUN pnpm install
+RUN pnpm config set dangerouslyAllowAllBuilds true
+RUN pnpm install --no-frozen-lockfile --verbose --unsafe-perm
 
 # 复制项目文件
 COPY . .

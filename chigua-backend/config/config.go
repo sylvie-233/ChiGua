@@ -43,6 +43,7 @@ type DatabaseConfig struct {
 // MinIOConfig MinIO配置
 type MinIOConfig struct {
 	Endpoint        string            `mapstructure:"endpoint"`
+	PublicEndpoint  string            `mapstructure:"public_endpoint"`
 	AccessKeyID     string            `mapstructure:"access_key_id"`
 	SecretAccessKey string            `mapstructure:"secret_access_key"`
 	UseSSL          bool              `mapstructure:"use_ssl"`
@@ -103,6 +104,7 @@ func setDefaultConfig() {
 
 	// MinIO配置
 	viper.SetDefault("minio.endpoint", "minio:9000")
+	viper.SetDefault("minio.public_endpoint", "localhost:9000")
 	viper.SetDefault("minio.access_key_id", "minioadmin")
 	viper.SetDefault("minio.secret_access_key", "minio123456")
 	viper.SetDefault("minio.use_ssl", false)

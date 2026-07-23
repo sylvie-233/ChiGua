@@ -59,6 +59,77 @@ func CreateArticle(article model.ArticleCreate, authorID int64) (*model.Article,
 	return &newArticle, nil
 }
 
+func GetAllArticleList(page, pageSize int, keyword string) (*model.ArticleList, error) {
+	var total int64
+	var articles []model.Article
+	var err error
+
+	offset := (page - 1) * pageSize
+
+	if keyword != "" {
+		err = database.DB.Get(&total, sql.ArticleCountAllByTitle, keyword)
+		if err != nil {
+			return nil, err
+		}
+		err = database.DB.Select(&articles, sql.ArticleSelectAllByTitle, keyword, pageSize, offset)
+	} else {
+		err = database.DB.Get(&total, sql.ArticleCountAll)
+		if err != nil {
+			return nil, err
+		}
+		err = database.DB.Select(&articles, sql.ArticleSelectAll, pageSize, offset)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
+	hasNext := page < totalPages
+	hasPrev := page > 1
+
+	response := &model.ArticleList{
+		PageResponse: model.PageResponse{
+			Total:      total,
+			Page:       page,
+			PageSize:   pageSize,
+			TotalPages: totalPages,
+			HasNext:    hasNext,
+			HasPrev:    hasPrev,
+		},
+		Items: make([]model.ArticleResponse, 0, len(articles)),
+	}
+
+	for _, article := range articles {
+		var tags []model.Tag
+		database.DB.Select(&tags, sql.ArticleSelectTags, article.ID)
+
+		var category model.Category
+		database.DB.Get(&category, sql.ArticleSelectCategory, article.CategoryID)
+
+		var author model.User
+		database.DB.Get(&author, sql.UserSelectByID, article.AuthorID)
+
+		response.Items = append(response.Items, model.ArticleResponse{
+			ID:         article.ID,
+			AuthorID:   article.AuthorID,
+			CategoryID: article.CategoryID,
+			Title:      article.Title,
+			Content:    article.Content,
+			CoverImage: article.CoverImage,
+			Status:     article.Status,
+			PublishAt:  article.PublishAt,
+			CreatedAt:  article.CreatedAt,
+			UpdateAt:   article.UpdateAt,
+			Tags:       tags,
+			Category:   category,
+			Author:     *author.ToResponse(),
+		})
+	}
+
+	return response, nil
+}
+
 func GetArticleList(page, pageSize int) (*model.ArticleList, error) {
 	var total int64
 	err := database.DB.Get(&total, sql.ArticleCountByStatus, model.ArticleStatusPublished)
@@ -211,6 +282,45 @@ func UpdateArticle(id int64, update model.ArticleUpdate, authorID int64) (*model
 	database.DB.Get(&updatedArticle, sql.ArticleSelectByID, id)
 
 	return &updatedArticle, nil
+}
+
+func CountArticleByStatus(status int) (int64, error) {
+	var count int64
+	err := database.DB.Get(&count, sql.ArticleCountByStatus, status)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+type RecentArticle struct {
+	ID         int64     `json:"id" db:"id"`
+	Title      string    `json:"title" db:"title"`
+	AuthorName string    `json:"authorName" db:"author_name"`
+	CreatedAt  time.Time `json:"createdAt" db:"created_at"`
+}
+
+func GetRecentArticles(limit int) ([]RecentArticle, error) {
+	articles := make([]RecentArticle, 0)
+	err := database.DB.Select(&articles, sql.ArticleSelectRecent, limit)
+	if err != nil {
+		return nil, err
+	}
+	return articles, nil
+}
+
+type ArticleDailyCount struct {
+	Date  string `json:"date" db:"date"`
+	Count int64  `json:"count" db:"count"`
+}
+
+func GetArticleCountByDate(startDate time.Time) ([]ArticleDailyCount, error) {
+	counts := make([]ArticleDailyCount, 0)
+	err := database.DB.Select(&counts, sql.ArticleCountByDate, startDate)
+	if err != nil {
+		return nil, err
+	}
+	return counts, nil
 }
 
 func DeleteArticle(id int64, authorID int64) error {

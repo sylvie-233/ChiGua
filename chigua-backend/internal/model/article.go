@@ -42,7 +42,7 @@ type ArticleUpdate struct {
 }
 
 type ArticleStatusUpdate struct {
-	Status int `json:"status" binding:"required"`
+	Status int `json:"status"`
 }
 
 type ArticleResponse struct {

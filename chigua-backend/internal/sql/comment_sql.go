@@ -68,3 +68,47 @@ SELECT COUNT(*)
 FROM comment 
 WHERE article_id = $1 AND parant_id = $2
 `
+
+// CommentCountAll 统计所有评论数
+const CommentCountAll = `
+SELECT COUNT(*) 
+FROM comment
+`
+
+// CommentSelectAll 查询所有评论列表
+const CommentSelectAll = `
+SELECT
+	id,
+	parant_id,
+	article_id,
+	reply_user_id,
+	user_id,
+	content,
+	created_at
+FROM comment
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+// CommentCountAllByContent 按内容关键词统计评论数
+const CommentCountAllByContent = `
+SELECT COUNT(*)
+FROM comment
+WHERE content ILIKE '%' || $1 || '%'
+`
+
+// CommentSelectAllByContent 按内容关键词查询评论列表
+const CommentSelectAllByContent = `
+SELECT
+	id,
+	parant_id,
+	article_id,
+	reply_user_id,
+	user_id,
+	content,
+	created_at
+FROM comment
+WHERE content ILIKE '%' || $1 || '%'
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
+`

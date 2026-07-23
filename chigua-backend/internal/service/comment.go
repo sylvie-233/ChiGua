@@ -122,6 +122,86 @@ func getCommentResponseWithUser(comment model.Comment) (model.CommentResponse, e
 	}, nil
 }
 
+// GetAllComments 获取所有评论列表（Admin用）
+func GetAllComments(page, pageSize int, keyword string) (*model.CommentListResponse, error) {
+	var total int64
+	var comments []model.Comment
+	var err error
+
+	offset := (page - 1) * pageSize
+
+	if keyword != "" {
+		err = database.DB.Get(&total, sql.CommentCountAllByContent, keyword)
+		if err != nil {
+			return nil, err
+		}
+		err = database.DB.Select(&comments, sql.CommentSelectAllByContent, keyword, pageSize, offset)
+	} else {
+		err = database.DB.Get(&total, sql.CommentCountAll)
+		if err != nil {
+			return nil, err
+		}
+		err = database.DB.Select(&comments, sql.CommentSelectAll, pageSize, offset)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
+	hasNext := page < totalPages
+	hasPrev := page > 1
+
+	response := model.CommentListResponse{
+		PageResponse: model.PageResponse{
+			Total:      total,
+			Page:       page,
+			PageSize:   pageSize,
+			TotalPages: totalPages,
+			HasNext:    hasNext,
+			HasPrev:    hasPrev,
+		},
+		Items: make([]model.CommentWithChildren, 0, len(comments)),
+	}
+
+	for _, comment := range comments {
+		commentResponse, err := getCommentResponseWithUser(comment)
+		if err != nil {
+			return nil, err
+		}
+
+		response.Items = append(response.Items, model.CommentWithChildren{
+			ID:          commentResponse.ID,
+			ParentID:    commentResponse.ParentID,
+			ArticleID:   commentResponse.ArticleID,
+			ReplyUserID: commentResponse.ReplyUserID,
+			UserID:      commentResponse.UserID,
+			Content:     commentResponse.Content,
+			CreatedAt:   commentResponse.CreatedAt,
+			User:        commentResponse.User,
+			ReplyUser:   commentResponse.ReplyUser,
+		})
+	}
+
+	return &response, nil
+}
+
+// AdminDeleteComment Admin删除评论（不检查权限）
+func AdminDeleteComment(id int64) error {
+	_, err := database.DB.Exec(sql.CommentDelete, id)
+	return err
+}
+
+// CountComment 统计评论总数
+func CountComment() (int64, error) {
+	var count int64
+	err := database.DB.Get(&count, sql.CommentCountAll)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 // GetCommentsWithPagination 获取两级评论分页列表
 // articleID: 文章ID
 // page: 页码（从1开始）

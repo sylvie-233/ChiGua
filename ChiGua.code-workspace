@@ -4,6 +4,9 @@
 			"path": "./chigua-frontend"
 		},
 		{
+			"path": "./chigua-admin"
+		},
+		{
 			"path": "./chigua-backend"
 		},
 		{

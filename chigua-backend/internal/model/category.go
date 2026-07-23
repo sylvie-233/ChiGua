@@ -12,3 +12,8 @@ type Category struct {
 type CategoryCreate struct {
 	Name string `json:"name" binding:"required"`
 }
+
+type CategoryListResponse struct {
+	PageResponse
+	Items []Category `json:"items"`
+}

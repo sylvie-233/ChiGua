@@ -35,8 +35,10 @@ database:
 
 # MinIO配置
 minio:
-  # MinIO服务地址
+  # MinIO服务地址（SDK 内部连接用）
   endpoint: localhost:9000
+  # 对外访问地址（浏览器可访问的 URL，默认使用 endpoint）
+  public_endpoint: localhost:9000
   # 访问密钥
   access_key_id: minioadmin
   # 秘密密钥

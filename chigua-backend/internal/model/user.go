@@ -35,9 +35,15 @@ type UserLogin struct {
 }
 
 type UserResponse struct {
-	ID        int64     `json:"id"`
-	Username  string    `json:"username"`
-	Nickname  string    `json:"nickname"`
-	Role      string    `json:"role"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID        int64     `json:"id" db:"id"`
+	Username  string    `json:"username" db:"username"`
+	Nickname  string    `json:"nickname" db:"nickname"`
+	Role      string    `json:"role" db:"role"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
+	UpdateAt  time.Time `json:"updateAt" db:"update_at"`
+}
+
+type UserListResponse struct {
+	PageResponse
+	Items []UserResponse `json:"items"`
 }

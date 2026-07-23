@@ -12,3 +12,8 @@ type Tag struct {
 type TagCreate struct {
 	Name string `json:"name" binding:"required"`
 }
+
+type TagListResponse struct {
+	PageResponse
+	Items []Tag `json:"items"`
+}

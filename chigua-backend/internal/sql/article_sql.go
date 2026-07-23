@@ -82,3 +82,75 @@ WHERE at.article_id = $1
 
 // ArticleSelectCategory 查询文章分类
 const ArticleSelectCategory = `SELECT id, name, created_at, update_at FROM category WHERE id = $1`
+
+// ArticleCountAll 统计所有文章数
+const ArticleCountAll = `
+SELECT
+	COUNT(*)
+FROM article
+`
+
+// ArticleSelectRecent 查询最近发布的文章
+const ArticleSelectRecent = `
+SELECT a.id, a.title, u.username AS author_name, a.created_at
+FROM article a
+LEFT JOIN users u ON u.id = a.author_id
+WHERE a.status = 1
+ORDER BY a.created_at DESC
+LIMIT $1
+`
+
+// ArticleCountByDate 按日期统计文章数量（最近一年）
+const ArticleCountByDate = `
+SELECT 
+	DATE(created_at) AS date,
+	COUNT(*) AS count
+FROM article
+WHERE created_at >= $1
+GROUP BY DATE(created_at)
+ORDER BY date ASC
+`
+
+// ArticleSelectAll 查询所有文章列表
+const ArticleSelectAll = `
+SELECT
+	id,
+	author_id,
+	category_id,
+	title,
+	content,
+	cover_image,
+	status,
+	publish_at,
+	created_at,
+	update_at
+FROM article
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+// ArticleCountAllByTitle 按标题关键词统计文章数
+const ArticleCountAllByTitle = `
+SELECT COUNT(*)
+FROM article
+WHERE title ILIKE '%' || $1 || '%'
+`
+
+// ArticleSelectAllByTitle 按标题关键词查询文章列表
+const ArticleSelectAllByTitle = `
+SELECT
+	id,
+	author_id,
+	category_id,
+	title,
+	content,
+	cover_image,
+	status,
+	publish_at,
+	created_at,
+	update_at
+FROM article
+WHERE title ILIKE '%' || $1 || '%'
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
+`
