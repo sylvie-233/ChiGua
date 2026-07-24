@@ -1,31 +1,36 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { PlusOutlined } from '@ant-design/icons-vue'
+import { PlusOutlined, CameraOutlined } from '@ant-design/icons-vue'
 import { Modal, message } from 'ant-design-vue'
-import { getUserList, deleteUser, updateUserRole, createUser, updateUser } from '@/api/user'
+import { getUserList, deleteUser, createUser, updateUser, getCurrentUser } from '@/api/user'
+import { getRoles, updateUserRoles } from '@/api/rbac'
+import { uploadFile } from '@/api/upload'
 import { formatDate } from '@/utils/date'
 import { createPagination, zebraRow, emptyText } from '@/utils/table'
-import type { UserCreate, UserUpdate } from '@/api/user'
-import type { UserResponse } from '@/types'
+import { useUserStore } from '@/stores/user'
+import AvatarCropper from '@/components/AvatarCropper.vue'
+import type { UserResponse, Role } from '@/types'
 
+const userStore = useUserStore()
 const searchText = ref('')
 const loading = ref(false)
 const users = ref<UserResponse[]>([])
 
 const pagination = createPagination()
 
-const roleMap: Record<string, { label: string; color: string }> = {
+const roleLabelMap: Record<string, { label: string; color: string }> = {
   admin: { label: '管理员', color: 'red' },
-  user: { label: '普通用户', color: 'default' }
+  reviewer: { label: '审核员', color: 'orange' },
+  user: { label: '普通用户', color: 'default' },
 }
 
 const columns = [
   { title: '序号', dataIndex: 'index', key: 'index', width: 80, align: 'center' as const },
-  { title: '用户名', dataIndex: 'username', key: 'username', width: 150 },
+  { title: '用户名', dataIndex: 'username', key: 'username', width: 120 },
   { title: '昵称', dataIndex: 'nickname', key: 'nickname', width: 120 },
-  { title: '角色', dataIndex: 'role', key: 'role', width: 100, align: 'center' as const },
+  { title: '头像', dataIndex: 'avatar', key: 'avatar', width: 60, align: 'center' as const },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180, align: 'center' as const },
-  { title: '操作', key: 'actions', width: 200, align: 'center' as const }
+  { title: '操作', key: 'actions', width: 180, align: 'center' as const }
 ]
 
 const fetchData = async () => {
@@ -75,33 +80,7 @@ const handleDelete = async (id: number) => {
           message.error(response.msg || '删除失败')
         }
       } catch (error) {
-        console.error('删除用户失败:', error)
         message.error('删除失败，请稍后重试')
-      }
-    }
-  })
-}
-
-const handleRoleChange = async (id: number, currentRole: string) => {
-  const newRole = currentRole === 'admin' ? 'user' : 'admin'
-  Modal.confirm({
-    title: '确认修改角色',
-    content: `确定要将用户角色改为${roleMap[newRole].label}吗？`,
-    okText: '确定',
-    okType: 'primary',
-    cancelText: '取消',
-    async onOk() {
-      try {
-        const response = await updateUserRole(id, newRole)
-        if (response.code === 200) {
-          message.success('角色修改成功')
-          fetchData()
-        } else {
-          message.error(response.msg || '角色修改失败')
-        }
-      } catch (error) {
-        console.error('修改用户角色失败:', error)
-        message.error('角色修改失败，请稍后重试')
       }
     }
   })
@@ -110,18 +89,18 @@ const handleRoleChange = async (id: number, currentRole: string) => {
 const formVisible = ref(false)
 const isEdit = ref(false)
 const editingId = ref(0)
-const form = reactive<UserCreate>({
+const form = reactive({
   username: '',
   password: '',
   nickname: '',
-  role: 'user'
+  avatar: '',
 })
 
 const resetForm = () => {
   form.username = ''
   form.password = ''
   form.nickname = ''
-  form.role = 'user'
+  form.avatar = ''
 }
 
 const openCreateDialog = () => {
@@ -137,8 +116,47 @@ const openEditDialog = (record: UserResponse) => {
   form.username = record.username
   form.password = ''
   form.nickname = record.nickname
-  form.role = record.role
+  form.avatar = record.avatar || ''
   formVisible.value = true
+}
+
+// 头像裁剪
+const avatarModalVisible = ref(false)
+const avatarImageUrl = ref('')
+const cropperRef = ref<any>()
+const avatarUploading = ref(false)
+
+const handleAvatarSelect = () => {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/*'
+  input.onchange = (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0]
+    if (!file) return
+    avatarImageUrl.value = URL.createObjectURL(file)
+    avatarModalVisible.value = true
+  }
+  input.click()
+}
+
+const handleAvatarCrop = () => {
+  cropperRef.value?.handleCrop()
+}
+
+const onAvatarCropped = async (blob: Blob) => {
+  avatarUploading.value = true
+  try {
+    const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' })
+    const res = await uploadFile(file)
+    if (res.code === 200) {
+      form.avatar = res.data.fileUrl
+      avatarModalVisible.value = false
+      message.success('头像已上传')
+    } else {
+      message.error('上传失败')
+    }
+  } catch { message.error('上传失败') }
+  finally { avatarUploading.value = false }
 }
 
 const handleSubmit = async () => {
@@ -151,40 +169,74 @@ const handleSubmit = async () => {
     return
   }
 
-  loading.value = true
   try {
     if (isEdit.value) {
-      const updateData: UserUpdate = {
-        nickname: form.nickname,
-        role: form.role
-      }
-      const response = await updateUser(editingId.value, updateData)
+      const response = await updateUser(editingId.value, { nickname: form.nickname, avatar: form.avatar })
       if (response.code === 200) {
         message.success('编辑成功')
         formVisible.value = false
-        fetchData()
+        // 如果编辑的是当前登录用户，刷新本地 store
+        if (userStore.userInfo && editingId.value === userStore.userInfo.id) {
+          getCurrentUser().then(res => { if (res.code === 200) userStore.setUserInfo(res.data) })
+        }
+        await fetchData()
       } else {
         message.error(response.msg || '保存失败')
       }
     } else {
-      const response = await createUser(form)
+      const response = await createUser({ username: form.username, password: form.password, nickname: form.nickname, avatar: form.avatar })
       if (response.code === 200) {
         message.success('新增用户成功')
         formVisible.value = false
-        fetchData()
+        await fetchData()
       } else {
         message.error(response.msg || '保存失败')
       }
     }
-  } catch (error: any) {
-    console.error('保存用户失败:', error)
-    if (error.response?.data?.code === 400 && error.response?.data?.msg === '用户已存在') {
-      message.error('用户名已存在')
-    } else {
-      message.error('保存失败，请稍后重试')
+  } catch {
+    message.error('保存失败，请稍后重试')
+  }
+}
+
+// ====== 角色分配抽屉 ======
+const roleDrawerVisible = ref(false)
+const roleUser = ref<UserResponse | null>(null)
+const allRoles = ref<Role[]>([])
+const selectedRoleIds = ref<number[]>([])
+const roleSaving = ref(false)
+
+const openRoleDrawer = async (record: UserResponse) => {
+  roleUser.value = record
+  roleDrawerVisible.value = true
+  try {
+    const res = await getRoles({ page: 1, pageSize: 100 })
+    if (res.code === 200) {
+      allRoles.value = res.data.items
+      selectedRoleIds.value = res.data.items
+        .filter(r => record.roles?.includes(r.code))
+        .map(r => r.id)
     }
+  } catch {
+    message.error('加载角色列表失败')
+  }
+}
+
+const handleRoleSave = async () => {
+  if (!roleUser.value) return
+  roleSaving.value = true
+  try {
+    const res = await updateUserRoles(roleUser.value.id, selectedRoleIds.value)
+    if (res.code === 200) {
+      message.success('角色已更新')
+      roleDrawerVisible.value = false
+      fetchData()
+    } else {
+      message.error(res.msg || '保存失败')
+    }
+  } catch {
+    message.error('保存失败')
   } finally {
-    loading.value = false
+    roleSaving.value = false
   }
 }
 
@@ -196,7 +248,7 @@ fetchData()
     <a-card style="margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <a-input-search v-model:value="searchText" placeholder="搜索用户名或昵称..." allow-clear style="width: 240px;" @search="handleSearch" />
-        <a-button type="primary" @click="openCreateDialog">
+        <a-button type="primary" @click="openCreateDialog" v-if="userStore.hasPermission('user:create')">
           <PlusOutlined /> 新增用户
         </a-button>
       </div>
@@ -219,18 +271,26 @@ fetchData()
         <template v-if="column.key === 'index'">
           {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
         </template>
-        <template v-if="column.key === 'role'">
-          <a-tag :color="roleMap[record.role]?.color" style="cursor: pointer;" @click="handleRoleChange(record.id, record.role)">
-            {{ roleMap[record.role]?.label }}
-          </a-tag>
+        <template v-if="column.key === 'avatar'">
+          <a-avatar :size="32" :src="record.avatar || undefined" style="background: #f0f0f0;">
+            {{ record.nickname?.charAt(0) || record.username?.charAt(0) || '?' }}
+          </a-avatar>
+        </template>
+        <template v-if="column.key === 'roles'">
+          <a-space :size="4">
+            <a-tag v-for="r in (record.roles?.length ? record.roles : ['user'])" :key="r" :color="roleLabelMap[r]?.color || 'default'">
+              {{ roleLabelMap[r]?.label || r }}
+            </a-tag>
+          </a-space>
         </template>
         <template v-if="column.key === 'createdAt'">
           {{ formatDate(record.createdAt) }}
         </template>
         <template v-if="column.key === 'actions'">
           <a-space>
-            <a-button type="primary" size="small" @click="openEditDialog(record)">编辑</a-button>
-            <a-button size="small" danger @click="handleDelete(record.id)">删除</a-button>
+            <a-button size="small" @click="openRoleDrawer(record)" v-if="userStore.hasPermission('user:update')">角色</a-button>
+            <a-button type="primary" size="small" @click="openEditDialog(record)" v-if="userStore.hasPermission('user:update')">编辑</a-button>
+            <a-button size="small" danger @click="handleDelete(record.id)" v-if="userStore.hasPermission('user:delete')">删除</a-button>
           </a-space>
         </template>
       </template>
@@ -244,7 +304,7 @@ fetchData()
       width="500px"
     >
       <a-form :model="form" layout="vertical">
-        <a-form-item label="用户名" :rules="[{ required: true, message: '请输入用户名' }]">
+        <a-form-item label="用户名">
           <a-input v-model:value="form.username" :disabled="isEdit" />
         </a-form-item>
         <a-form-item label="密码" :rules="[{ required: !isEdit, message: '请输入密码' }]">
@@ -253,11 +313,13 @@ fetchData()
         <a-form-item label="昵称">
           <a-input v-model:value="form.nickname" placeholder="请输入昵称" />
         </a-form-item>
-        <a-form-item label="角色">
-          <a-select v-model:value="form.role" style="width: 100%">
-            <a-select-option value="user">普通用户</a-select-option>
-            <a-select-option value="admin">管理员</a-select-option>
-          </a-select>
+        <a-form-item label="头像">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <a-avatar :size="64" :src="form.avatar || undefined" style="background: #f0f0f0;">
+              <template v-if="!form.avatar"><CameraOutlined style="font-size: 24px; color: #bbb;" /></template>
+            </a-avatar>
+            <a-button @click="handleAvatarSelect">上传头像</a-button>
+          </div>
         </a-form-item>
         <a-form-item>
           <a-space>
@@ -267,6 +329,31 @@ fetchData()
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <!-- 头像裁剪弹窗 -->
+    <a-modal v-model:open="avatarModalVisible" title="裁剪头像" @ok="handleAvatarCrop" :confirm-loading="avatarUploading" width="440px">
+      <AvatarCropper ref="cropperRef" :image-url="avatarImageUrl" @cropped="onAvatarCropped" />
+    </a-modal>
+
+    <!-- 角色分配抽屉 -->
+    <a-drawer
+      v-model:open="roleDrawerVisible"
+      :title="`角色配置 - ${roleUser?.nickname || roleUser?.username || ''}`"
+      :width="400"
+      :footer-style="{ textAlign: 'right' }"
+    >
+      <template #footer>
+        <a-button style="margin-right: 8px;" @click="roleDrawerVisible = false">取消</a-button>
+        <a-button type="primary" :loading="roleSaving" @click="handleRoleSave" v-if="userStore.hasPermission('user:update')">保存</a-button>
+      </template>
+
+      <a-checkbox-group v-model:value="selectedRoleIds" style="display: flex; flex-direction: column; gap: 12px;">
+        <a-checkbox v-for="role in allRoles" :key="role.id" :value="role.id">
+          <span style="font-weight: 500;">{{ role.name }}</span>
+          <span style="color: #999; margin-left: 8px; font-size: 12px;">{{ role.description }}</span>
+        </a-checkbox>
+      </a-checkbox-group>
+    </a-drawer>
   </div>
 </template>
 

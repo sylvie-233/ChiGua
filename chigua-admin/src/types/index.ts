@@ -18,7 +18,18 @@ export interface UserResponse {
   id: number
   username: string
   nickname: string
-  role: string
+  avatar: string
+  roles: string[]
+  permissions: string[]
+  createdAt: string
+  updateAt: string
+}
+
+export interface Role {
+  id: number
+  code: string
+  name: string
+  description: string
   createdAt: string
   updateAt: string
 }
@@ -26,6 +37,7 @@ export interface UserResponse {
 export interface Category {
   id: number
   name: string
+  sortOrder: number
   createdAt: string
   updateAt: string
 }

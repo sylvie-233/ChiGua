@@ -18,13 +18,14 @@ func InitRouter(r *gin.Engine) {
 		}))
 	})
 
-	// 用户路由
+	// 用户路由（公共）
 	users := apiGroup.Group("/user")
 	{
 		users.POST("/register", api.Register)
 		users.POST("/login", api.Login)
 		users.GET("/me", middleware.AuthMiddleware(), api.GetCurrentUser)
 		users.PUT("/me", middleware.AuthMiddleware(), api.UpdateUser)
+		users.PUT("/avatar", middleware.AuthMiddleware(), api.UpdateAvatar)
 	}
 
 	// 文章路由（公共）
@@ -45,8 +46,8 @@ func InitRouter(r *gin.Engine) {
 	comments := apiGroup.Group("/comment")
 	{
 		comments.POST("", middleware.AuthMiddleware(), api.CreateComment)
-		comments.GET("/article/:id", api.GetCommentsWithPagination)           // 两级评论分页列表
-		comments.GET("/article/:id/children", api.GetMoreSecondLevelComments) // 获取更多二级评论
+		comments.GET("/article/:id", api.GetCommentsWithPagination)
+		comments.GET("/article/:id/children", api.GetMoreSecondLevelComments)
 		comments.DELETE("/:id", middleware.AuthMiddleware(), api.DeleteComment)
 	}
 
@@ -75,65 +76,84 @@ func InitRouter(r *gin.Engine) {
 		upload.DELETE("/file", middleware.AuthMiddleware(), api.DeleteFile)
 	}
 
-	// Admin 登录路由（不经过认证中间件，但检查角色的 admin login 在 admin/login）
+	// Admin 登录路由
 	apiGroup.POST("/admin/login", admin.AdminLogin)
 
-	// Admin 文章路由（admin + reviewer 可访问）
-	adminArticles := apiGroup.Group("/admin/article", middleware.AuthMiddleware(), middleware.AdminOrReviewerMiddleware())
+	// ====== Admin 路由（权限控制） ======
+
+	// 文章管理路由
+	adminArticles := apiGroup.Group("/admin/article", middleware.AuthMiddleware(), middleware.RequireAnyPermission("article:list", "article:create"))
 	{
-		adminArticles.POST("", admin.CreateArticle)
-		adminArticles.GET("", admin.GetArticleList)
-		adminArticles.GET("/pending", admin.GetPendingReviewArticles)
-		adminArticles.GET("/reviews", admin.GetReviewRecords)
-		adminArticles.GET("/:id", admin.GetArticleByID)
-		adminArticles.PUT("/:id", admin.UpdateArticle)
-		adminArticles.DELETE("/:id", admin.DeleteArticle)
-		adminArticles.POST("/:id/publish", admin.PublishArticle)
-		adminArticles.PUT("/:id/status", admin.UpdateArticleStatus)
-		adminArticles.POST("/:id/approve", admin.ApproveArticle)
-		adminArticles.POST("/:id/reject", admin.RejectArticle)
-		adminArticles.POST("/:id/unpublish", admin.UnpublishArticle)
+		adminArticles.POST("", middleware.RequirePermission("article:create"), admin.CreateArticle)
+		adminArticles.GET("", middleware.RequirePermission("article:list"), admin.GetArticleList)
+		adminArticles.GET("/pending", middleware.RequirePermission("article:review"), admin.GetPendingReviewArticles)
+		adminArticles.GET("/reviews", middleware.RequirePermission("article:records"), admin.GetReviewRecords)
+		adminArticles.GET("/:id", middleware.RequirePermission("article:list"), admin.GetArticleByID)
+		adminArticles.PUT("/:id", middleware.RequirePermission("article:edit"), admin.UpdateArticle)
+		adminArticles.DELETE("/:id", middleware.RequirePermission("article:delete"), admin.DeleteArticle)
+		adminArticles.POST("/:id/publish", middleware.RequirePermission("article:publish"), admin.PublishArticle)
+		adminArticles.PUT("/:id/status", middleware.RequirePermission("article:publish"), admin.UpdateArticleStatus)
+		adminArticles.POST("/:id/approve", middleware.RequirePermission("article:approve"), admin.ApproveArticle)
+		adminArticles.POST("/:id/reject", middleware.RequirePermission("article:reject"), admin.RejectArticle)
+		adminArticles.POST("/:id/unpublish", middleware.RequirePermission("article:unpublish"), admin.UnpublishArticle)
 	}
 
-	// Admin 其他路由（仅 admin 可访问）
-	adminGroup := apiGroup.Group("/admin", middleware.AuthMiddleware(), middleware.AdminRoleMiddleware())
+	// 分类管理路由
+	adminCategories := apiGroup.Group("/admin/category", middleware.AuthMiddleware(), middleware.RequirePermission("category:list"))
 	{
-		// Admin 分类路由
-		adminCategories := adminGroup.Group("/category")
-		{
-			adminCategories.POST("", admin.CreateCategory)
-			adminCategories.GET("", admin.GetAllCategories)
-			adminCategories.PUT("/:id", admin.UpdateCategory)
-			adminCategories.DELETE("/:id", admin.DeleteCategory)
-		}
-
-		// Admin 标签路由
-		adminTags := adminGroup.Group("/tag")
-		{
-			adminTags.POST("", admin.CreateTag)
-			adminTags.GET("", admin.GetAllTags)
-			adminTags.PUT("/:id", admin.UpdateTag)
-			adminTags.DELETE("/:id", admin.DeleteTag)
-		}
-
-		// Admin 评论路由
-		adminComments := adminGroup.Group("/comment")
-		{
-			adminComments.GET("", admin.GetCommentList)
-			adminComments.DELETE("/:id", admin.DeleteComment)
-		}
-
-		// Admin 用户路由
-		adminUsers := adminGroup.Group("/user")
-		{
-			adminUsers.POST("", admin.CreateUser)
-			adminUsers.GET("", admin.GetUserList)
-			adminUsers.PUT("/:id", admin.UpdateUser)
-			adminUsers.DELETE("/:id", admin.DeleteUser)
-			adminUsers.PUT("/:id/role", admin.UpdateUserRole)
-		}
-
-		// Admin 仪表盘统计路由
-		adminGroup.GET("/stats", admin.GetDashboardStats)
+		adminCategories.POST("", middleware.RequirePermission("category:create"), admin.CreateCategory)
+		adminCategories.GET("", admin.GetAllCategories)
+		adminCategories.PUT("/:id", middleware.RequirePermission("category:update"), admin.UpdateCategory)
+		adminCategories.DELETE("/:id", middleware.RequirePermission("category:delete"), admin.DeleteCategory)
 	}
+
+	// 标签管理路由
+	adminTags := apiGroup.Group("/admin/tag", middleware.AuthMiddleware(), middleware.RequirePermission("tag:list"))
+	{
+		adminTags.POST("", middleware.RequirePermission("tag:create"), admin.CreateTag)
+		adminTags.GET("", admin.GetAllTags)
+		adminTags.PUT("/:id", middleware.RequirePermission("tag:update"), admin.UpdateTag)
+		adminTags.DELETE("/:id", middleware.RequirePermission("tag:delete"), admin.DeleteTag)
+	}
+
+	// 评论管理路由
+	adminComments := apiGroup.Group("/admin/comment", middleware.AuthMiddleware(), middleware.RequirePermission("comment:list"))
+	{
+		adminComments.GET("", admin.GetCommentList)
+		adminComments.DELETE("/:id", middleware.RequirePermission("comment:delete"), admin.DeleteComment)
+	}
+
+	// 用户管理路由
+	adminUsers := apiGroup.Group("/admin/user", middleware.AuthMiddleware(), middleware.RequirePermission("user:list"))
+	{
+		adminUsers.POST("", middleware.RequirePermission("user:create"), admin.CreateUser)
+		adminUsers.GET("", admin.GetUserList)
+		adminUsers.PUT("/:id", middleware.RequirePermission("user:update"), admin.UpdateUser)
+		adminUsers.DELETE("/:id", middleware.RequirePermission("user:delete"), admin.DeleteUser)
+		adminUsers.PUT("/:id/roles", middleware.RequirePermission("user:update"), admin.UpdateUserRoles)
+	}
+
+	// 角色管理路由
+	adminRoles := apiGroup.Group("/admin/role", middleware.AuthMiddleware(), middleware.RequirePermission("role:list"))
+	{
+		adminRoles.GET("", admin.GetRoles)
+		adminRoles.POST("", middleware.RequirePermission("role:manage"), admin.CreateRole)
+		adminRoles.PUT("/:id", middleware.RequirePermission("role:manage"), admin.UpdateRole)
+		adminRoles.DELETE("/:id", middleware.RequirePermission("role:manage"), admin.DeleteRoleHandler)
+		adminRoles.GET("/:id/menus", admin.GetRolePermissionIDsHandler)
+		adminRoles.PUT("/:id/menus", middleware.RequirePermission("role:manage"), admin.UpdateRoleMenusHandler)
+	}
+
+	// 菜单管理路由
+	adminMenus := apiGroup.Group("/admin/menu", middleware.AuthMiddleware())
+	{
+		adminMenus.GET("/tree", admin.GetPermissionTree)
+		adminMenus.GET("", admin.GetAllPermissions)
+		adminMenus.POST("", middleware.RequirePermission("role:manage"), admin.CreateMenu)
+		adminMenus.PUT("/:id", middleware.RequirePermission("role:manage"), admin.UpdateMenu)
+		adminMenus.DELETE("/:id", middleware.RequirePermission("role:manage"), admin.DeleteMenu)
+	}
+
+	// 仪表盘统计
+	apiGroup.GET("/admin/stats", middleware.AuthMiddleware(), middleware.RequirePermission("dashboard:view"), admin.GetDashboardStats)
 }

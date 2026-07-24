@@ -5,7 +5,9 @@ export interface UserInfo {
   id: number
   username: string
   nickname: string
-  role: string
+  avatar: string
+  roles: string[]
+  permissions: string[]
   createdAt: string
   updateAt: string
 }
@@ -15,15 +17,29 @@ export const useUserStore = defineStore('user', () => {
   const userInfo = ref<UserInfo | null>(null)
 
   const isLoggedIn = computed(() => !!token.value)
-  const isAdmin = computed(() => userInfo.value?.role === 'admin')
-  const isAdminOrReviewer = computed(() => {
-    const role = userInfo.value?.role
-    return role === 'admin' || role === 'reviewer'
-  })
+
+  const permissions = computed(() => userInfo.value?.permissions ?? [])
+
   const displayName = computed(() => {
     if (!userInfo.value) return ''
     return userInfo.value.nickname || userInfo.value.username
   })
+
+  const roleLabel = computed(() => {
+    if (!userInfo.value) return ''
+    const roles = userInfo.value.roles || []
+    if (roles.includes('admin')) return '管理员'
+    if (roles.includes('reviewer')) return '审核员'
+    return '普通用户'
+  })
+
+  function hasPermission(code: string): boolean {
+    return permissions.value.includes(code)
+  }
+
+  function hasAnyPermission(...codes: string[]): boolean {
+    return codes.some(c => permissions.value.includes(c))
+  }
 
   const setToken = (newToken: string) => {
     token.value = newToken
@@ -33,6 +49,7 @@ export const useUserStore = defineStore('user', () => {
   const setUserInfo = (info: UserInfo) => {
     userInfo.value = info
     localStorage.setItem('userInfo', JSON.stringify(info))
+    localStorage.setItem('permissions', JSON.stringify(info.permissions ?? []))
   }
 
   const initFromStorage = () => {
@@ -51,6 +68,7 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value = null
     localStorage.removeItem('token')
     localStorage.removeItem('userInfo')
+    localStorage.removeItem('permissions')
   }
 
   initFromStorage()
@@ -59,9 +77,11 @@ export const useUserStore = defineStore('user', () => {
     token,
     userInfo,
     isLoggedIn,
-    isAdmin,
-    isAdminOrReviewer,
+    permissions,
     displayName,
+    roleLabel,
+    hasPermission,
+    hasAnyPermission,
     setToken,
     setUserInfo,
     logout

@@ -38,18 +38,18 @@ func validateArticleForPublish(article *model.Article) error {
 	return nil
 }
 
-// IsAdminOrReviewer 判断用户是否为管理员或审核员
-func IsAdminOrReviewer(userID int64) (bool, error) {
-	user, err := GetUserByID(userID)
+// userHasEditPermission 检查用户是否有编辑他人文章的权限
+func userHasEditPermission(userID int64) (bool, error) {
+	permissions, err := GetUserPermissions(userID)
 	if err != nil {
 		return false, err
 	}
-	return user.Role == "admin" || user.Role == "reviewer", nil
-}
-
-// userHasReviewPermission 检查用户是否有权限操作他人文章
-func userHasReviewPermission(userID int64) (bool, error) {
-	return IsAdminOrReviewer(userID)
+	for _, p := range permissions {
+		if p == "article:edit" || p == "article:delete" || p == "article:publish" {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // buildArticleResponse 构建文章响应（含标签、分类、作者、审核人）
@@ -252,7 +252,7 @@ func UpdateArticle(id int64, update model.ArticleUpdate, authorID int64) (*model
 
 	// 权限检查：作者本人 或 admin/reviewer 可以编辑
 	if article.AuthorID != authorID {
-		isAdminReviewer, err := userHasReviewPermission(authorID)
+		isAdminReviewer, err := userHasEditPermission(authorID)
 		if err != nil || !isAdminReviewer {
 			return nil, ErrArticleNoPermission
 		}
@@ -320,7 +320,7 @@ func SubmitForReview(id int64, authorID int64) error {
 
 	// 权限检查：作者本人 或 admin/reviewer 可以提交审核
 	if article.AuthorID != authorID {
-		isAdminReviewer, err := userHasReviewPermission(authorID)
+		isAdminReviewer, err := userHasEditPermission(authorID)
 		if err != nil || !isAdminReviewer {
 			return ErrArticleNoPermission
 		}
@@ -437,7 +437,6 @@ func GetReviewRecords(articleID int64) ([]model.ArticleReviewRecordResponse, err
 		ReviewerUsername  string    `db:"username"`
 		ReviewerPassword  string    `db:"password"`
 		ReviewerNickname  string    `db:"nickname"`
-		ReviewerRole      string    `db:"role"`
 		ReviewerCreatedAt time.Time `db:"created_at"`
 		ReviewerUpdateAt  time.Time `db:"update_at"`
 	}
@@ -460,7 +459,6 @@ func GetReviewRecords(articleID int64) ([]model.ArticleReviewRecordResponse, err
 				ID:        r.ReviewerID2,
 				Username:  r.ReviewerUsername,
 				Nickname:  r.ReviewerNickname,
-				Role:      r.ReviewerRole,
 				CreatedAt: r.ReviewerCreatedAt,
 				UpdateAt:  r.ReviewerUpdateAt,
 			},
@@ -492,7 +490,6 @@ func GetAllReviewRecords(page, pageSize int) (*model.ArticleReviewRecordList, er
 		ReviewerUsername string    `db:"username"`
 		ReviewerPassword string    `db:"password"`
 		ReviewerNickname string    `db:"nickname"`
-		ReviewerRole     string    `db:"role"`
 		ReviewerCreatedAt time.Time `db:"created_at"`
 		ReviewerUpdateAt  time.Time `db:"update_at"`
 	}
@@ -520,7 +517,6 @@ func GetAllReviewRecords(page, pageSize int) (*model.ArticleReviewRecordList, er
 				ID:        r.ReviewerID,
 				Username:  r.ReviewerUsername,
 				Nickname:  r.ReviewerNickname,
-				Role:      r.ReviewerRole,
 				CreatedAt: r.ReviewerCreatedAt,
 				UpdateAt:  r.ReviewerUpdateAt,
 			},
@@ -626,7 +622,7 @@ func DeleteArticle(id int64, authorID int64) error {
 
 	// 权限检查：作者本人 或 admin/reviewer 可以删除
 	if article.AuthorID != authorID {
-		isAdminReviewer, err := userHasReviewPermission(authorID)
+		isAdminReviewer, err := userHasEditPermission(authorID)
 		if err != nil || !isAdminReviewer {
 			return ErrArticleNoPermission
 		}
@@ -659,7 +655,7 @@ func DeleteArticle(id int64, authorID int64) error {
 
 func PublishArticle(id int64, authorID int64) error {
 	// 检查用户角色
-	isAdminReviewer, err := userHasReviewPermission(authorID)
+	isAdminReviewer, err := userHasEditPermission(authorID)
 	if err != nil {
 		return err
 	}
@@ -698,7 +694,7 @@ func UpdateArticleStatus(id int64, authorID int64, status int) error {
 
 	// 权限检查：作者本人 或 admin/reviewer 可以修改
 	if article.AuthorID != authorID {
-		isAdminReviewer, err := userHasReviewPermission(authorID)
+		isAdminReviewer, err := userHasEditPermission(authorID)
 		if err != nil || !isAdminReviewer {
 			return ErrArticleNoPermission
 		}

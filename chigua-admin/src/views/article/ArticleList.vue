@@ -253,7 +253,7 @@ fetchData()
     <a-card style="margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <a-input-search v-model:value="searchText" placeholder="搜索文章标题..." allow-clear style="width: 260px;" @search="handleSearch" />
-        <a-button type="primary" @click="handleAdd">
+        <a-button type="primary" @click="handleAdd" v-permission="'article:create'">
           <PlusOutlined /> 新增文章
         </a-button>
       </div>
@@ -295,17 +295,17 @@ fetchData()
             <a-button size="small">操作 <DownOutlined /></a-button>
             <template #overlay>
               <a-menu @click="(e: any) => handleAction(record, e.key)">
-                <a-menu-item key="edit">编辑</a-menu-item>
-                <a-menu-item v-if="record.status === 0 || record.status === 2" key="submit">提交审核</a-menu-item>
-                <a-menu-item v-if="record.status === 1" key="unpublish">下架</a-menu-item>
-                <a-menu-item v-if="record.status === 3" key="approve">
+                <a-menu-item key="edit" v-permission="'article:edit'">编辑</a-menu-item>
+                <a-menu-item v-if="record.status === 0 || record.status === 2" key="submit" v-permission="'article:submit'">提交审核</a-menu-item>
+                <a-menu-item v-if="record.status === 1" key="unpublish" v-permission="'article:unpublish'">下架</a-menu-item>
+                <a-menu-item v-if="record.status === 3" key="approve" v-permission="'article:approve'">
                   <span style="color: #52c41a;">审核通过</span>
                 </a-menu-item>
-                <a-menu-item v-if="record.status === 3" key="reject">
+                <a-menu-item v-if="record.status === 3" key="reject" v-permission="'article:reject'">
                   <span style="color: #ff4d4f;">驳回</span>
                 </a-menu-item>
                 <a-menu-divider />
-                <a-menu-item key="delete" danger>删除</a-menu-item>
+                <a-menu-item key="delete" danger v-permission="'article:delete'">删除</a-menu-item>
               </a-menu>
             </template>
           </a-dropdown>

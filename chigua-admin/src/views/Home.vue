@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, onMounted, onUnmounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Modal, message } from 'ant-design-vue'
+import { Modal } from 'ant-design-vue'
 import {
   ReloadOutlined,
   FileOutlined,
@@ -15,7 +15,7 @@ import { getDashboardStats } from '@/api/stats'
 import type { DashboardStats } from '@/api/stats'
 import { useUserStore } from '@/stores/user'
 import { formatDate } from '@/utils/date'
- 
+
 const router = useRouter()
 const userStore = useUserStore()
  
@@ -32,12 +32,13 @@ const state = reactive({
   } as DashboardStats
 })
  
-const topCards = [
-  { title: '分类总数', suffix: '个', icon: AppstoreOutlined, color: '#52c41a', bg: '#f6ffed', path: '/categories', key: 'categories' },
-  { title: '标签总数', suffix: '个', icon: TagsOutlined, color: '#faad14', bg: '#fffbe6', path: '/tags', key: 'tags' },
-  { title: '评论总数', suffix: '条', icon: MessageOutlined, color: '#722ed1', bg: '#f9f0ff', path: '/comments', key: 'comments' },
-  { title: '用户总数', suffix: '人', icon: UserOutlined, color: '#eb2f96', bg: '#fff0f6', path: '/users', key: 'users' }
+const allTopCards = [
+  { title: '分类总数', suffix: '个', icon: AppstoreOutlined, color: '#52c41a', bg: '#f6ffed', path: '/categories', key: 'categories', permission: 'dashboard:category:stats' },
+  { title: '标签总数', suffix: '个', icon: TagsOutlined, color: '#faad14', bg: '#fffbe6', path: '/tags', key: 'tags', permission: 'dashboard:tag:stats' },
+  { title: '评论总数', suffix: '条', icon: MessageOutlined, color: '#722ed1', bg: '#f9f0ff', path: '/comments', key: 'comments', permission: 'dashboard:comment:stats' },
+  { title: '用户总数', suffix: '人', icon: UserOutlined, color: '#eb2f96', bg: '#fff0f6', path: '/system/users', key: 'users', permission: 'dashboard:user:stats' }
 ]
+const topCards = computed(() => allTopCards.filter(c => userStore.hasPermission(c.permission)))
  
 const articleStatusList: { label: string; key: keyof DashboardStats['articles']; color: string }[] = [
   { label: '草稿', key: 'draft', color: '#8c8c8c' },
@@ -192,21 +193,17 @@ const getCardValue = (key: string) => {
 }
  
 const fetchStats = async () => {
+  if (!userStore.hasPermission('dashboard:view')) return
   state.loading = true
   try {
     const res = await getDashboardStats()
     if (res.code === 200) {
       const data = { ...res.data }
-      if (!data.recentArticles) {
-        data.recentArticles = []
-      }
+      if (!data.recentArticles) data.recentArticles = []
       Object.assign(state.stats, data)
-    } else {
-      message.error(res.msg || '获取统计数据失败')
     }
-  } catch (error) {
-    console.error('获取统计数据失败:', error)
-    message.error('获取统计数据失败')
+  } catch {
+    // 无权限静默忽略
   } finally {
     state.loading = false
   }
@@ -262,7 +259,7 @@ const handleArticleClick = (article: { id: number; title: string }) => {
     >
       <template #extra>
         <a-space>
-          <a-button type="primary" :loading="state.loading" @click="handleRefresh">
+          <a-button type="primary" :loading="state.loading" @click="handleRefresh" v-permission="'dashboard:refresh'">
             <template #icon><component :is="ReloadOutlined" /></template>
             刷新数据
           </a-button>
@@ -298,7 +295,7 @@ const handleArticleClick = (article: { id: number; title: string }) => {
  
       <a-row :gutter="16" style="margin-top: 16px;">
         <a-col :span="24">
-          <a-card hoverable @click="navTo('/articles')" style="cursor: pointer;">
+          <a-card hoverable @click="navTo('/articles')" style="cursor: pointer;" v-permission="'dashboard:article:stats'">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 24px;">
               <div style="display: flex; align-items: center; gap: 16px;">
                 <a-avatar
@@ -334,7 +331,7 @@ const handleArticleClick = (article: { id: number; title: string }) => {
  
       <a-row :gutter="16" style="margin-top: 16px;">
         <a-col :span="24">
-          <a-card title="文章发布活跃度">
+          <a-card title="文章发布活跃度" v-permission="'dashboard:article:chart'">
             <div ref="activityRef" class="activity-wrapper" :style="activityCssVars">
               <div class="months-header">
                 <div
@@ -388,9 +385,9 @@ const handleArticleClick = (article: { id: number; title: string }) => {
  
       <a-row :gutter="16" style="margin-top: 16px;">
         <a-col :span="24">
-          <a-card title="最近发布的文章">
+          <a-card title="最近发布的文章" v-permission="'dashboard:article:recent'">
             <template #extra>
-              <a-button type="link" @click="navTo('/articles')">查看全部</a-button>
+              <a-button type="link" @click="navTo('/articles')" v-permission="'dashboard:article:recent'">查看全部</a-button>
             </template>
             <a-empty v-if="!state.loading && state.stats.recentArticles.length === 0" description="暂无文章" />
             <a-list

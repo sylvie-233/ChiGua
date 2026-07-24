@@ -18,12 +18,14 @@ const editingId = ref(0)
 const pagination = createPagination()
 
 const form = reactive({
-  name: ''
+  name: '',
+  sortOrder: 0
 })
 
 const columns = [
   { title: '序号', dataIndex: 'index', key: 'index', width: 80, align: 'center' },
   { title: '分类名称', dataIndex: 'name', key: 'name', align: 'left' },
+  { title: '排序', dataIndex: 'sortOrder', key: 'sortOrder', width: 80, align: 'center' },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180, align: 'center' },
   { title: '操作', key: 'actions', width: 180, align: 'center', fixed: 'right' }
 ]
@@ -62,6 +64,7 @@ const handleAdd = () => {
   isEdit.value = false
   editingId.value = 0
   form.name = ''
+  form.sortOrder = 0
   modalVisible.value = true
 }
 
@@ -69,6 +72,7 @@ const handleEdit = (record: Category) => {
   isEdit.value = true
   editingId.value = record.id
   form.name = record.name
+  form.sortOrder = record.sortOrder || 0
   modalVisible.value = true
 }
 
@@ -104,12 +108,12 @@ const handleModalSubmit = async () => {
   modalLoading.value = true
   try {
     const response = isEdit.value
-      ? await updateCategory(editingId.value, { name: form.name.trim() })
-      : await createCategory({ name: form.name.trim() })
+      ? await updateCategory(editingId.value, { name: form.name.trim(), sortOrder: form.sortOrder })
+      : await createCategory({ name: form.name.trim(), sortOrder: form.sortOrder })
     if (response.code === 200) {
       message.success(isEdit.value ? '编辑成功' : '新增分类成功')
       modalVisible.value = false
-      fetchData()
+      await fetchData()
     } else {
       message.error(response.msg || '保存失败')
     }
@@ -133,7 +137,7 @@ fetchData()
     <a-card style="margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <a-input-search v-model:value="searchText" placeholder="搜索分类名称..." allow-clear style="width: 240px;" @search="handleSearch" />
-        <a-button type="primary" @click="handleAdd">
+        <a-button type="primary" @click="handleAdd" v-permission="'category:create'">
           <PlusOutlined /> 新增分类
         </a-button>
       </div>
@@ -161,11 +165,11 @@ fetchData()
         </template>
         <template v-if="column.key === 'actions'">
           <a-space>
-            <a-button type="primary" size="small" @click="handleEdit(record)">
+            <a-button type="primary" size="small" @click="handleEdit(record)" v-permission="'category:update'">
               <component :is="EditOutlined" />
               编辑
             </a-button>
-            <a-button danger size="small" @click="handleDelete(record.id)">删除</a-button>
+            <a-button danger size="small" @click="handleDelete(record.id)" v-permission="'category:delete'">删除</a-button>
           </a-space>
         </template>
       </template>
@@ -183,6 +187,9 @@ fetchData()
       <a-form :model="form" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
         <a-form-item label="名称" name="name" :rules="[{ required: true, message: '请输入分类名称' }]">
           <a-input v-model:value="form.name" placeholder="请输入分类名称" />
+        </a-form-item>
+        <a-form-item label="排序">
+          <a-input-number v-model:value="form.sortOrder" :min="0" style="width: 100%" />
         </a-form-item>
       </a-form>
     </a-modal>

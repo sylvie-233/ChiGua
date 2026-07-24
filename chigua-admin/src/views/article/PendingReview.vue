@@ -200,10 +200,10 @@ fetchData()
               <a-button size="small" @click="handlePreview(record)">
                 <EyeOutlined /> 预览
               </a-button>
-              <a-button type="primary" size="small" :loading="approving" @click="handleApprove(record)">
+              <a-button type="primary" size="small" :loading="approving" @click="handleApprove(record)" v-permission="'article:approve'">
                 通过
               </a-button>
-              <a-button size="small" danger :loading="rejecting" @click="handleReject(record)">
+              <a-button size="small" danger :loading="rejecting" @click="handleReject(record)" v-permission="'article:reject'">
                 驳回
               </a-button>
             </a-space>
@@ -237,8 +237,8 @@ fetchData()
     >
       <template #footer>
         <a-space>
-          <a-button size="large" danger :loading="rejecting" @click="handleReject(previewArticle!)" v-if="previewArticle">驳回</a-button>
-          <a-button size="large" type="primary" :loading="approving" @click="handleApprove(previewArticle!)" v-if="previewArticle">审核通过</a-button>
+          <a-button size="large" danger :loading="rejecting" @click="handleReject(previewArticle!)" v-if="previewArticle" v-permission="'article:reject'">驳回</a-button>
+          <a-button size="large" type="primary" :loading="approving" @click="handleApprove(previewArticle!)" v-if="previewArticle" v-permission="'article:approve'">审核通过</a-button>
         </a-space>
       </template>
 

@@ -80,7 +80,7 @@ func UpdateCategory(c *gin.Context) {
 		return
 	}
 
-	category, err := service.UpdateCategory(id, categoryCreate.Name)
+	category, err := service.UpdateCategory(id, categoryCreate.Name, categoryCreate.SortOrder)
 	if err != nil {
 		if errors.Is(err, service.ErrCategoryExists) {
 			c.JSON(int(model.BadRequest), model.ErrorResponse(model.CategoryExists))

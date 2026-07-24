@@ -26,6 +26,12 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// 新用户默认分配 user 角色
+	userRole, _ := service.GetRoleByCode("user")
+	if userRole != nil {
+		service.AssignUserRole(user.ID, userRole.ID)
+	}
+
 	c.JSON(int(model.Success), model.SuccessResponse(user.ToResponse()))
 }
 
@@ -65,7 +71,27 @@ func GetCurrentUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(int(model.Success), model.SuccessResponse(user.ToResponse()))
+	resp := user.ToResponse()
+	// 填充角色和权限
+	roles, _ := service.GetUserRoles(user.ID)
+	resp.Roles = roles
+
+	var permissions []string
+	isAdmin := false
+	for _, r := range roles {
+		if r == "admin" {
+			isAdmin = true
+			break
+		}
+	}
+	if isAdmin {
+		permissions, _ = service.GetAdminPermissions()
+	} else {
+		permissions, _ = service.GetUserPermissions(user.ID)
+	}
+	resp.Permissions = permissions
+
+	c.JSON(int(model.Success), model.SuccessResponse(resp))
 }
 
 func UpdateUser(c *gin.Context) {
@@ -87,4 +113,28 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	c.JSON(int(model.Success), model.SuccessResponse("更新成功"))
+}
+
+// UpdateAvatar 更新用户头像
+func UpdateAvatar(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(int(model.Unauthorized), model.ErrorResponse(model.Unauthorized))
+		return
+	}
+
+	var body struct {
+		Avatar string `json:"avatar"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.InvalidParams))
+		return
+	}
+
+	if err := service.UpdateUserAvatar(userID.(int64), body.Avatar); err != nil {
+		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
+		return
+	}
+
+	c.JSON(int(model.Success), model.SuccessResponse(nil))
 }

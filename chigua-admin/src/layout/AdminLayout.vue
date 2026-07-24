@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { HomeOutlined, FileOutlined, FileTextOutlined, AuditOutlined, HistoryOutlined, AppstoreOutlined, TagsOutlined, MessageOutlined, UserOutlined, DownOutlined } from '@ant-design/icons-vue'
+import * as Icons from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { useTabsStore } from '@/stores/tabs'
 import { useUserStore } from '@/stores/user'
 import { getCurrentUser } from '@/api/user'
+import { getMenuTree } from '@/api/menu'
+import type { MenuItem } from '@/api/menu'
 
 const collapsed = ref(false)
 const route = useRoute()
@@ -14,98 +16,98 @@ const tabsStore = useTabsStore()
 const userStore = useUserStore()
 
 const openKeys = ref<string[]>([])
+const menuTree = ref<MenuItem[]>([])
+
+// 动态图标：从字符串名解析为组件
+const resolveIcon = (iconName: string) => {
+  if (!iconName) return null
+  const icon = (Icons as Record<string, any>)[iconName]
+  return icon || null
+}
+
+// 加载菜单树
+const loadMenu = async () => {
+  try {
+    const res = await getMenuTree()
+    if (res.code === 200) {
+      menuTree.value = res.data
+    }
+  } catch {
+    // 菜单加载失败不阻塞
+  }
+}
+
+// 构建 menuMap（路径 → 标题）
+const menuMap = computed(() => {
+  const map: Record<string, string> = { '/': '首页' }
+  const walk = (items: MenuItem[]) => {
+    for (const item of items) {
+      if (item.path) map[item.path] = item.title
+      if (item.children) walk(item.children)
+    }
+  }
+  walk(menuTree.value)
+  return map
+})
 
 const selectedKeys = computed(() => {
   const path = route.path
   if (path === '/articles/new' || (path.startsWith('/articles/') && path.endsWith('/edit'))) {
-    // 新建/编辑文章 → 高亮"文章列表"
     return ['/articles']
-  }
-  if (path.startsWith('/articles')) {
-    // 子菜单项精确匹配
-    return [path]
   }
   return [path]
 })
 
-// 当在文章相关页面时，自动展开"文章管理"子菜单
-watch(
-  () => route.path,
-  (path) => {
-    if (path.startsWith('/articles')) {
-      if (!openKeys.value.includes('/articles')) {
-        openKeys.value = ['/articles']
+// 自动展开当前路径所在子菜单
+watch(() => route.path, (path) => {
+  const walk = (items: MenuItem[]) => {
+    for (const item of items) {
+      if (item.children?.length) {
+        const childPaths = item.children.map(c => c.path).filter(Boolean)
+        if (childPaths.some(p => path.startsWith(p!))) {
+          if (!openKeys.value.includes(String(item.id))) {
+            openKeys.value = [...openKeys.value, String(item.id)]
+          }
+        }
+        walk(item.children)
       }
     }
-  },
-  { immediate: true }
-)
-
-const menuMap: Record<string, { title: string }> = {
-  '/': { title: '首页' },
-  '/articles': { title: '文章列表' },
-  '/articles/new': { title: '新建文章' },
-  '/articles/edit': { title: '编辑文章' },
-  '/articles/pending': { title: '审核管理' },
-  '/articles/records': { title: '审核记录' },
-  '/categories': { title: '分类管理' },
-  '/tags': { title: '标签管理' },
-  '/comments': { title: '评论管理' },
-  '/users': { title: '用户管理' }
-}
-
-/** 从路径获取菜单/标签页标题 */
-const getPageTitle = (path: string): string | undefined => {
-  if (path.startsWith('/articles/') && path.endsWith('/edit')) {
-    return menuMap['/articles/edit']?.title
   }
-  return menuMap[path]?.title
+  walk(menuTree.value)
+}, { immediate: true })
+
+const getPageTitle = (path: string): string | undefined => {
+  if (path.startsWith('/articles/') && path.endsWith('/edit')) return '编辑文章'
+  return menuMap.value[path]
 }
 
-watch(
-  () => route.path,
-  (path) => {
-    const title = getPageTitle(path)
-    if (title) {
-      tabsStore.addTab({
-        path,
-        name: (route.name as string) || path,
-        title
-      })
-    }
-  },
-  { immediate: true }
-)
+watch(() => route.path, (path) => {
+  const title = getPageTitle(path)
+  if (title) {
+    tabsStore.addTab({ path, name: (route.name as string) || path, title })
+  }
+}, { immediate: true })
 
 onMounted(async () => {
   if (userStore.token && !userStore.userInfo) {
     try {
       const res = await getCurrentUser()
-      if (res.code === 200) {
-        userStore.setUserInfo(res.data)
-      }
-    } catch (error) {
-      console.error('获取当前用户信息失败:', error)
-    }
+      if (res.code === 200) userStore.setUserInfo(res.data)
+    } catch { /* ignore */ }
   }
+  await loadMenu()
 })
 
 const handleMenuClick = (e: { key: string }) => {
-  if (e.key !== route.path) {
-    router.push(e.key)
-  }
+  if (e.key !== route.path) router.push(e.key)
 }
 
 const handleBreadcrumbClick = (path: string) => {
-  if (path !== route.path) {
-    router.push(path)
-  }
+  if (path !== route.path) router.push(path)
 }
 
 const handleTabClick = (path: string) => {
-  if (path !== route.path) {
-    router.push(path)
-  }
+  if (path !== route.path) router.push(path)
 }
 
 const handleTabEdit = (targetKey: string | MouseEvent, action: 'add' | 'remove') => {
@@ -127,70 +129,67 @@ const handleLogout = () => {
 const breadcrumbs = computed(() => {
   const items = [{ path: '/', title: '首页' }]
   if (route.path !== '/') {
-    if (route.path.startsWith('/articles')) {
-      items.push({ path: '/articles', title: '文章管理' })
-      const title = getPageTitle(route.path)
-      if (title && title !== '文章列表') {
-        items.push({ path: route.path, title })
+    // 找到当前路径的父菜单链
+    const findParentChain = (items: MenuItem[], target: string, chain: { path: string; title: string }[]): boolean => {
+      for (const item of items) {
+        if (item.path === target) {
+          if (item.children?.length) chain.push({ path: item.path, title: item.title })
+          return true
+        }
+        if (item.children?.length) {
+          chain.push({ path: item.children[0]?.path || '', title: item.title })
+          if (findParentChain(item.children, target, chain)) return true
+          chain.pop()
+        }
       }
-    } else {
-      const title = menuMap[route.path]?.title
-      if (title) {
-        items.push({ path: route.path, title })
-      }
+      return false
     }
+
+    const chain: { path: string; title: string }[] = []
+    findParentChain(menuTree.value, route.path, chain)
+    // 去重
+    const seen = new Set<string>()
+    for (const c of chain) {
+      if (!seen.has(c.title)) { seen.add(c.title); items.push(c) }
+    }
+    const title = getPageTitle(route.path)
+    if (title) items.push({ path: route.path, title })
   }
   return items
 })
 
-const roleLabel = computed(() => {
-  return userStore.isAdmin ? '管理员' : '普通用户'
-})
 </script>
 
 <template>
-  <a-layout class="layout" style="min-height: 100vh">
+  <a-layout class="layout" style="height: 100vh">
     <a-layout-sider v-model:collapsed="collapsed" collapsible>
       <div class="logo">
         <span>{{ collapsed ? '🍉' : '🍉 吃瓜网' }}</span>
       </div>
       <a-menu theme="dark" mode="inline" :selected-keys="selectedKeys" v-model:open-keys="openKeys" @click="handleMenuClick">
-        <a-menu-item key="/">
-          <component :is="HomeOutlined" />
-          <span>首页</span>
-        </a-menu-item>
-        <a-sub-menu key="/articles">
-          <template #icon><component :is="FileOutlined" /></template>
-          <template #title>文章管理</template>
-          <a-menu-item key="/articles">
-            <component :is="FileTextOutlined" />
-            <span>文章列表</span>
+        <template v-for="item in menuTree" :key="item.id">
+          <!-- 子菜单 -->
+          <a-sub-menu v-if="item.children?.length" :key="String(item.id)">
+            <template #icon><component :is="resolveIcon(item.icon)" /></template>
+            <template #title>{{ item.title }}</template>
+            <template v-for="child in item.children" :key="child.id">
+              <a-sub-menu v-if="child.children?.length" :key="String(child.id)">
+                <template #icon><component :is="resolveIcon(child.icon)" /></template>
+                <template #title>{{ child.title }}</template>
+                <a-menu-item v-for="sub in child.children" :key="sub.path">{{ sub.title }}</a-menu-item>
+              </a-sub-menu>
+              <a-menu-item v-else :key="child.path">
+                <template #icon><component :is="resolveIcon(child.icon)" /></template>
+                <span>{{ child.title }}</span>
+              </a-menu-item>
+            </template>
+          </a-sub-menu>
+          <!-- 普通菜单项 -->
+          <a-menu-item v-else :key="item.path">
+            <template #icon><component :is="resolveIcon(item.icon)" /></template>
+            <span>{{ item.title }}</span>
           </a-menu-item>
-          <a-menu-item v-if="userStore.isAdminOrReviewer" key="/articles/pending">
-            <component :is="AuditOutlined" />
-            <span>审核管理</span>
-          </a-menu-item>
-          <a-menu-item v-if="userStore.isAdminOrReviewer" key="/articles/records">
-            <component :is="HistoryOutlined" />
-            <span>审核记录</span>
-          </a-menu-item>
-        </a-sub-menu>
-        <a-menu-item key="/categories">
-          <component :is="AppstoreOutlined" />
-          <span>分类管理</span>
-        </a-menu-item>
-        <a-menu-item key="/tags">
-          <component :is="TagsOutlined" />
-          <span>标签管理</span>
-        </a-menu-item>
-        <a-menu-item key="/comments">
-          <component :is="MessageOutlined" />
-          <span>评论管理</span>
-        </a-menu-item>
-        <a-menu-item key="/users">
-          <component :is="UserOutlined" />
-          <span>用户管理</span>
-        </a-menu-item>
+        </template>
       </a-menu>
     </a-layout-sider>
     <a-layout>
@@ -198,12 +197,12 @@ const roleLabel = computed(() => {
         <div style="font-size: 16px; font-weight: bold;">后台管理系统</div>
         <a-dropdown>
           <span style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
-            <a-avatar style="background: #1890ff;">
+            <a-avatar style="background: #1890ff;" :src="userStore.userInfo?.avatar || undefined">
               {{ (userStore.displayName || 'U').charAt(0).toUpperCase() }}
             </a-avatar>
             <span>{{ userStore.displayName || '未登录' }}</span>
-            <a-tag v-if="userStore.userInfo" :color="userStore.isAdmin ? 'red' : 'blue'">{{ roleLabel }}</a-tag>
-            <component :is="DownOutlined" />
+            <a-tag v-if="userStore.userInfo" :color="userStore.hasPermission('article:review') ? 'red' : 'blue'">{{ userStore.roleLabel }}</a-tag>
+            <component :is="Icons.DownOutlined" />
           </span>
           <template #overlay>
             <a-menu>
@@ -213,19 +212,8 @@ const roleLabel = computed(() => {
         </a-dropdown>
       </a-layout-header>
       <div class="tabs-container">
-        <a-tabs
-          v-model:active-key="tabsStore.activeKey"
-          type="editable-card"
-          hide-add
-          @tab-click="handleTabClick"
-          @edit="handleTabEdit"
-        >
-          <a-tab-pane
-            v-for="tab in tabsStore.tabs"
-            :key="tab.path"
-            :tab="tab.title"
-            :closable="tab.path !== '/'"
-          />
+        <a-tabs v-model:active-key="tabsStore.activeKey" type="editable-card" hide-add @tab-click="handleTabClick" @edit="handleTabEdit">
+          <a-tab-pane v-for="tab in tabsStore.tabs" :key="tab.path" :tab="tab.title" :closable="tab.path !== '/'" />
         </a-tabs>
       </div>
       <div class="breadcrumb-area">
@@ -236,10 +224,11 @@ const roleLabel = computed(() => {
           </a-breadcrumb-item>
         </a-breadcrumb>
       </div>
-      <a-layout-content style="margin: 8px 16px 16px; padding: 24px; background: #fff; min-height: 280px;">
+      <a-layout-content style="margin: 8px 16px 16px; padding: 24px; background: #fff; overflow: auto;">
         <router-view :key="route.fullPath" />
       </a-layout-content>
     </a-layout>
+
   </a-layout>
 </template>
 
@@ -251,33 +240,10 @@ const roleLabel = computed(() => {
   text-align: center;
   color: #fff;
 }
-
-.layout {
-  min-height: 100vh;
-}
-
-.tabs-container {
-  background: #fff;
-  padding: 0 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.breadcrumb-area {
-  margin: 0 16px;
-  padding-top: 12px;
-}
-
-.breadcrumb-link {
-  color: #1890ff;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.breadcrumb-link:hover {
-  color: #40a9ff;
-}
-
-:deep(.ant-tabs-nav) {
-  margin: 0 !important;
-}
+.layout { min-height: 100vh; }
+.tabs-container { background: #fff; padding: 0 16px; border-bottom: 1px solid #f0f0f0; }
+.breadcrumb-area { margin: 0 16px; padding-top: 12px; }
+.breadcrumb-link { color: #1890ff; cursor: pointer; transition: color 0.2s; }
+.breadcrumb-link:hover { color: #40a9ff; }
+:deep(.ant-tabs-nav) { margin: 0 !important; }
 </style>

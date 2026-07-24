@@ -17,7 +17,7 @@ export const login = async (data: LoginParams): Promise<BaseResponse<LoginRespon
 }
 
 export const getCurrentUser = async (): Promise<BaseResponse<UserResponse>> => {
-  const response = await request.get('/user/current')
+  const response = await request.get('/user/me')
   return response.data
 }
 
@@ -31,8 +31,8 @@ export const deleteUser = async (id: number): Promise<BaseResponse<void>> => {
   return response.data
 }
 
-export const updateUserRole = async (id: number, role: string): Promise<BaseResponse<void>> => {
-  const response = await request.put(`/admin/user/${id}/role`, { role })
+export const updateAvatar = async (avatar: string): Promise<BaseResponse<void>> => {
+  const response = await request.put('/user/avatar', { avatar })
   return response.data
 }
 
@@ -40,12 +40,12 @@ export interface UserCreate {
   username: string
   password: string
   nickname?: string
-  role?: string
+  avatar?: string
 }
 
 export interface UserUpdate {
   nickname?: string
-  role?: string
+  avatar?: string
 }
 
 export const createUser = async (data: UserCreate): Promise<BaseResponse<UserResponse>> => {

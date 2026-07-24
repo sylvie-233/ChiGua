@@ -110,7 +110,7 @@ fetchData()
           {{ formatDate(record.createdAt) }}
         </template>
         <template v-if="column.key === 'actions'">
-          <a-button size="small" danger @click="handleDelete(record.id)">删除</a-button>
+          <a-button size="small" danger @click="handleDelete(record.id)" v-permission="'comment:delete'">删除</a-button>
         </template>
       </template>
     </a-table>

@@ -9,14 +9,23 @@ import (
 )
 
 type Claims struct {
-	UserID int64 `json:"user_id"`
+	UserID      int64    `json:"user_id"`
+	Permissions []string `json:"permissions,omitempty"`
 	jwt.RegisteredClaims
 }
 
 func GenerateToken(userID int64) (string, error) {
+	return GenerateTokenWithPermissions(userID, nil)
+}
+
+func GenerateTokenWithPermissions(userID int64, permissions []string) (string, error) {
 	var secretKey = []byte(config.AppConfig.Server.Secret)
+	if permissions == nil {
+		permissions = []string{}
+	}
 	claims := Claims{
-		UserID: userID,
+		UserID:      userID,
+		Permissions: permissions,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

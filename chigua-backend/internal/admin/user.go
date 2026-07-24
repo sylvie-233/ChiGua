@@ -23,37 +23,48 @@ func AdminLogin(c *gin.Context) {
 		return
 	}
 
-	if user.Role != "admin" && user.Role != "reviewer" {
-		c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
-		return
+	// 获取权限：admin 拥有全部权限
+	roles, _ := service.GetUserRoles(user.ID)
+	var permissions []string
+	isAdmin := false
+	for _, r := range roles {
+		if r == "admin" {
+			isAdmin = true
+			break
+		}
+	}
+	if isAdmin {
+		permissions, _ = service.GetAdminPermissions()
+	} else {
+		permissions, _ = service.GetUserPermissions(user.ID)
 	}
 
-	token, err := jwt.GenerateToken(user.ID)
+	token, err := jwt.GenerateTokenWithPermissions(user.ID, permissions)
 	if err != nil {
 		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
 		return
 	}
+
+	user.Roles = roles
+	user.Permissions = permissions
 
 	c.JSON(int(model.Success), model.SuccessResponse(gin.H{"token": token, "user": user}))
 }
 
 func CreateUser(c *gin.Context) {
 	var userCreate struct {
-		Username string `json:"username" binding:"required"`
-		Password string `json:"password" binding:"required"`
-		Nickname string `json:"nickname"`
-		Role     string `json:"role"`
+		Username string  `json:"username" binding:"required"`
+		Password string  `json:"password" binding:"required"`
+		Nickname string  `json:"nickname"`
+		Avatar   string  `json:"avatar"`
+		RoleIDs  []int64 `json:"roleIds"`
 	}
 	if err := c.ShouldBindJSON(&userCreate); err != nil {
 		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
 		return
 	}
 
-	if userCreate.Role != "admin" && userCreate.Role != "user" && userCreate.Role != "reviewer" {
-		userCreate.Role = "user"
-	}
-
-	user, err := service.CreateUser(userCreate.Username, userCreate.Password, userCreate.Nickname, userCreate.Role)
+	user, err := service.CreateUser(userCreate.Username, userCreate.Password, userCreate.Nickname, userCreate.Avatar)
 	if err != nil {
 		if errors.Is(err, service.ErrUserExists) {
 			c.JSON(int(model.BadRequest), model.ErrorResponse(model.UserExists))
@@ -63,7 +74,23 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(int(model.Success), model.SuccessResponse(user.ToResponse()))
+	// 分配角色（默认 user）
+	if len(userCreate.RoleIDs) > 0 {
+		service.SetUserRoles(user.ID, userCreate.RoleIDs)
+	} else {
+		userRole, _ := service.GetRoleByCode("user")
+		if userRole != nil {
+			service.AssignUserRole(user.ID, userRole.ID)
+		}
+	}
+
+	c.JSON(int(model.Success), model.SuccessResponse(model.UserResponse{
+		ID:        user.ID,
+		Username:  user.Username,
+		Nickname:  user.Nickname,
+		CreatedAt: user.CreatedAt,
+		UpdateAt:  user.UpdateAt,
+	}))
 }
 
 func UpdateUser(c *gin.Context) {
@@ -75,19 +102,14 @@ func UpdateUser(c *gin.Context) {
 
 	var userUpdate struct {
 		Nickname string `json:"nickname"`
-		Role     string `json:"role"`
+		Avatar   string `json:"avatar"`
 	}
 	if err := c.ShouldBindJSON(&userUpdate); err != nil {
 		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
 		return
 	}
 
-	if userUpdate.Role != "" && userUpdate.Role != "admin" && userUpdate.Role != "user" && userUpdate.Role != "reviewer" {
-		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
-		return
-	}
-
-	err = service.AdminUpdateUser(id, userUpdate.Nickname, userUpdate.Role)
+	err = service.AdminUpdateUser(id, userUpdate.Nickname, userUpdate.Avatar)
 	if err != nil {
 		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
 		return
@@ -115,6 +137,12 @@ func GetUserList(c *gin.Context) {
 		return
 	}
 
+	// 为每个用户填充角色和权限
+	for i := range users.Items {
+		roles, _ := service.GetUserRoles(users.Items[i].ID)
+		users.Items[i].Roles = roles
+	}
+
 	c.JSON(int(model.Success), model.SuccessResponse(users))
 }
 
@@ -126,35 +154,6 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	err = service.DeleteUserByID(id)
-	if err != nil {
-		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
-		return
-	}
-
-	c.JSON(int(model.Success), model.SuccessResponse(nil))
-}
-
-func UpdateUserRole(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
-		return
-	}
-
-	var roleUpdate struct {
-		Role string `json:"role"`
-	}
-	if err := c.ShouldBindJSON(&roleUpdate); err != nil {
-		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
-		return
-	}
-
-	if roleUpdate.Role != "admin" && roleUpdate.Role != "user" && roleUpdate.Role != "reviewer" {
-		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
-		return
-	}
-
-	err = service.UpdateUserRole(id, roleUpdate.Role)
 	if err != nil {
 		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
 		return

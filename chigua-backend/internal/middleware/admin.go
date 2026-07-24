@@ -2,60 +2,66 @@ package middleware
 
 import (
 	"chigua-backend/internal/model"
-	"chigua-backend/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-func AdminRoleMiddleware() gin.HandlerFunc {
+// RequirePermission 检查 JWT claims 中是否包含指定权限（无需查数据库）
+func RequirePermission(permCode string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := c.Get("userID")
+		permissions, exists := c.Get("permissions")
 		if !exists {
 			c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
 			c.Abort()
 			return
 		}
 
-		user, err := service.GetUserByID(userID.(int64))
-		if err != nil {
+		perms, ok := permissions.([]string)
+		if !ok {
 			c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
 			c.Abort()
 			return
 		}
 
-		if user.Role != "admin" {
-			c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
-			c.Abort()
-			return
+		for _, p := range perms {
+			if p == permCode {
+				c.Next()
+				return
+			}
 		}
 
-		c.Next()
+		c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
+		c.Abort()
 	}
 }
 
-// AdminOrReviewerMiddleware 允许 admin 和 reviewer 角色通过
-func AdminOrReviewerMiddleware() gin.HandlerFunc {
+// RequireAnyPermission 检查是否包含任一权限
+func RequireAnyPermission(permCodes ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := c.Get("userID")
+		permissions, exists := c.Get("permissions")
 		if !exists {
 			c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
 			c.Abort()
 			return
 		}
 
-		user, err := service.GetUserByID(userID.(int64))
-		if err != nil {
+		perms, ok := permissions.([]string)
+		if !ok {
 			c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
 			c.Abort()
 			return
 		}
 
-		if user.Role != "admin" && user.Role != "reviewer" {
-			c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
-			c.Abort()
-			return
+		for _, p := range perms {
+			for _, required := range permCodes {
+				if p == required {
+					c.Next()
+					return
+				}
+			}
 		}
 
-		c.Next()
+		c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
+		c.Abort()
 	}
 }

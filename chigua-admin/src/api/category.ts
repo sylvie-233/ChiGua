@@ -6,12 +6,12 @@ export const getCategoryList = async (params: { page: number; pageSize: number; 
   return response.data
 }
 
-export const createCategory = async (data: { name: string }): Promise<BaseResponse<Category>> => {
+export const createCategory = async (data: { name: string; sortOrder?: number }): Promise<BaseResponse<Category>> => {
   const response = await request.post('/admin/category', data)
   return response.data
 }
 
-export const updateCategory = async (id: number, data: { name: string }): Promise<BaseResponse<Category>> => {
+export const updateCategory = async (id: number, data: { name: string; sortOrder?: number }): Promise<BaseResponse<Category>> => {
   const response = await request.put(`/admin/category/${id}`, data)
   return response.data
 }

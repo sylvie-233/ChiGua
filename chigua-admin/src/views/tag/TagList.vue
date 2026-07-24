@@ -109,7 +109,7 @@ const handleModalSubmit = async () => {
     if (response.code === 200) {
       message.success(isEdit.value ? '编辑成功' : '新增标签成功')
       modalVisible.value = false
-      fetchData()
+      await fetchData()
     } else {
       message.error(response.msg || '保存失败')
     }
@@ -133,7 +133,7 @@ fetchData()
     <a-card style="margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <a-input-search v-model:value="searchText" placeholder="搜索标签名称..." allow-clear style="width: 240px;" @search="handleSearch" />
-        <a-button type="primary" @click="handleAdd">
+        <a-button type="primary" @click="handleAdd" v-permission="'tag:create'">
           <PlusOutlined /> 新增标签
         </a-button>
       </div>
@@ -161,11 +161,11 @@ fetchData()
         </template>
         <template v-if="column.key === 'actions'">
           <a-space>
-            <a-button type="primary" size="small" @click="handleEdit(record)">
+            <a-button type="primary" size="small" @click="handleEdit(record)" v-permission="'tag:update'">
               <component :is="EditOutlined" />
               编辑
             </a-button>
-            <a-button danger size="small" @click="handleDelete(record.id)">删除</a-button>
+            <a-button danger size="small" @click="handleDelete(record.id)" v-permission="'tag:delete'">删除</a-button>
           </a-space>
         </template>
       </template>

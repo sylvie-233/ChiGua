@@ -31,12 +31,11 @@ func RegisterUser(user model.UserRegister) (*model.User, error) {
 		Username:  user.Username,
 		Password:  hashedPassword,
 		Nickname:  user.Nickname,
-		Role:      "user",
 		CreatedAt: now,
 		UpdateAt:  now,
 	}
 
-	err = database.DB.QueryRow(sql.UserInsert, newUser.Username, newUser.Password, newUser.Nickname, newUser.Role, newUser.CreatedAt, newUser.UpdateAt).Scan(&newUser.ID)
+	err = database.DB.QueryRow(sql.UserInsert, newUser.Username, newUser.Password, newUser.Nickname, newUser.Avatar, newUser.CreatedAt, newUser.UpdateAt).Scan(&newUser.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -140,16 +139,7 @@ func DeleteUserByID(id int64) error {
 	return nil
 }
 
-func UpdateUserRole(id int64, role string) error {
-	now := time.Now()
-	_, err := database.DB.Exec(sql.UserUpdateRole, role, now, id)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func CreateUser(username, password, nickname, role string) (*model.User, error) {
+func CreateUser(username, password, nickname, avatar string) (*model.User, error) {
 	var count int
 	err := database.DB.Get(&count, sql.UserCheckExists, username)
 	if err != nil {
@@ -168,12 +158,12 @@ func CreateUser(username, password, nickname, role string) (*model.User, error) 
 		Username:  username,
 		Password:  hashedPassword,
 		Nickname:  nickname,
-		Role:      role,
+		Avatar:    avatar,
 		CreatedAt: now,
 		UpdateAt:  now,
 	}
 
-	err = database.DB.QueryRow(sql.UserInsert, newUser.Username, newUser.Password, newUser.Nickname, newUser.Role, newUser.CreatedAt, newUser.UpdateAt).Scan(&newUser.ID)
+	err = database.DB.QueryRow(sql.UserInsert, newUser.Username, newUser.Password, newUser.Nickname, newUser.Avatar, newUser.CreatedAt, newUser.UpdateAt).Scan(&newUser.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -181,22 +171,29 @@ func CreateUser(username, password, nickname, role string) (*model.User, error) 
 	return &newUser, nil
 }
 
-func AdminUpdateUser(id int64, nickname, role string) error {
+func AdminUpdateUser(id int64, nickname, avatar string) error {
 	now := time.Now()
 	var nicknamePtr *string
 	if nickname != "" {
 		nicknamePtr = &nickname
 	}
-	var rolePtr *string
-	if role != "" {
-		rolePtr = &role
+	var avatarPtr *string
+	if avatar != "" {
+		avatarPtr = &avatar
 	}
 
-	_, err := database.DB.Exec(sql.AdminUserUpdate, nicknamePtr, rolePtr, now, id)
+	_, err := database.DB.Exec(sql.AdminUserUpdate, nicknamePtr, avatarPtr, now, id)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+// UpdateUserAvatar 更新用户头像
+func UpdateUserAvatar(userID int64, avatar string) error {
+	now := time.Now()
+	_, err := database.DB.Exec(`UPDATE users SET avatar = $1, update_at = $2 WHERE id = $3`, avatar, now, userID)
+	return err
 }
 
 // CountUser 统计用户总数

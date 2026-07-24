@@ -202,7 +202,7 @@ const ReviewRecordInsert = `INSERT INTO article_review_record (article_id, revie
 const ReviewRecordSelectByArticle = `
 SELECT
 	r.id, r.article_id, r.reviewer_id, r.action, r.comment, r.created_at,
-	u.id, u.username, u.password, u.nickname, u.role, u.created_at, u.update_at
+	u.id, u.username, u.password, u.nickname, u.created_at, u.update_at
 FROM article_review_record r
 JOIN users u ON r.reviewer_id = u.id
 WHERE r.article_id = $1
@@ -216,7 +216,7 @@ const ReviewRecordCountAll = `SELECT COUNT(*) FROM article_review_record`
 const ReviewRecordSelectAll = `
 SELECT
 	r.id, r.article_id, a.title AS article_title, r.action, r.comment, r.created_at,
-	u.id, u.username, u.password, u.nickname, u.role, u.created_at, u.update_at
+	u.id, u.username, u.password, u.nickname, u.created_at, u.update_at
 FROM article_review_record r
 JOIN article a ON r.article_id = a.id
 JOIN users u ON r.reviewer_id = u.id

@@ -32,8 +32,9 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// 将用户ID存储在上下文中
+		// 将用户ID和权限存储在上下文中
 		c.Set("userID", claims.UserID)
+		c.Set("permissions", claims.Permissions)
 		c.Next()
 	}
 }

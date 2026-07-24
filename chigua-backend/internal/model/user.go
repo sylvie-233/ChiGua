@@ -7,18 +7,18 @@ type User struct {
 	Username  string    `json:"username" db:"username" binding:"required"`
 	Password  string    `json:"password" db:"password" binding:"required"`
 	Nickname  string    `json:"nickname" db:"nickname"`
-	Role      string    `json:"role" db:"role"`
+	Avatar    string    `json:"avatar" db:"avatar"`
 	CreatedAt time.Time `json:"createdAt" db:"created_at"`
 	UpdateAt  time.Time `json:"updateAt" db:"update_at"`
 }
 
-// ToResponse 将 User 转换为 UserResponse，不包含密码字段
+// ToResponse 将 User 转换为 UserResponse
 func (u *User) ToResponse() *UserResponse {
 	return &UserResponse{
 		ID:        u.ID,
 		Username:  u.Username,
 		Nickname:  u.Nickname,
-		Role:      u.Role,
+		Avatar:    u.Avatar,
 		CreatedAt: u.CreatedAt,
 	}
 }
@@ -35,12 +35,14 @@ type UserLogin struct {
 }
 
 type UserResponse struct {
-	ID        int64     `json:"id" db:"id"`
-	Username  string    `json:"username" db:"username"`
-	Nickname  string    `json:"nickname" db:"nickname"`
-	Role      string    `json:"role" db:"role"`
-	CreatedAt time.Time `json:"createdAt" db:"created_at"`
-	UpdateAt  time.Time `json:"updateAt" db:"update_at"`
+	ID          int64     `json:"id" db:"id"`
+	Username    string    `json:"username" db:"username"`
+	Nickname    string    `json:"nickname" db:"nickname"`
+	Avatar      string    `json:"avatar" db:"avatar"`
+	Roles       []string  `json:"roles"`
+	Permissions []string  `json:"permissions"`
+	CreatedAt   time.Time `json:"createdAt" db:"created_at"`
+	UpdateAt    time.Time `json:"updateAt" db:"update_at"`
 }
 
 type UserListResponse struct {
