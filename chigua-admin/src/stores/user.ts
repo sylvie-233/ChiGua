@@ -16,6 +16,10 @@ export const useUserStore = defineStore('user', () => {
 
   const isLoggedIn = computed(() => !!token.value)
   const isAdmin = computed(() => userInfo.value?.role === 'admin')
+  const isAdminOrReviewer = computed(() => {
+    const role = userInfo.value?.role
+    return role === 'admin' || role === 'reviewer'
+  })
   const displayName = computed(() => {
     if (!userInfo.value) return ''
     return userInfo.value.nickname || userInfo.value.username
@@ -56,6 +60,7 @@ export const useUserStore = defineStore('user', () => {
     userInfo,
     isLoggedIn,
     isAdmin,
+    isAdminOrReviewer,
     displayName,
     setToken,
     setUserInfo,

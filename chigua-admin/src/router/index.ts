@@ -5,6 +5,8 @@ import Home from '@/views/Home.vue'
 import Login from '@/views/Login.vue'
 import ArticleList from '@/views/article/ArticleList.vue'
 import ArticleForm from '@/views/article/ArticleForm.vue'
+import PendingReview from '@/views/article/PendingReview.vue'
+import ReviewRecords from '@/views/article/ReviewRecords.vue'
 import CategoryList from '@/views/category/CategoryList.vue'
 import TagList from '@/views/tag/TagList.vue'
 import CommentList from '@/views/comment/CommentList.vue'
@@ -41,6 +43,16 @@ const routes: RouteRecordRaw[] = [
         path: 'articles/:id/edit',
         name: 'ArticleEdit',
         component: ArticleForm
+      },
+      {
+        path: 'articles/pending',
+        name: 'PendingReview',
+        component: PendingReview
+      },
+      {
+        path: 'articles/records',
+        name: 'ReviewRecords',
+        component: ReviewRecords
       },
       {
         path: 'categories',

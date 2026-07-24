@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { PlusOutlined } from '@ant-design/icons-vue'
+import { PlusOutlined, DownOutlined } from '@ant-design/icons-vue'
 import { Modal, message } from 'ant-design-vue'
-import { getArticleList, deleteArticle, updateArticleStatus } from '@/api/article'
+import { getArticleList, getArticleById, deleteArticle, approveArticle, rejectArticle, submitForReview, unpublishArticle } from '@/api/article'
 import { formatDate } from '@/utils/date'
 import { createPagination, zebraRow, emptyText } from '@/utils/table'
 import type { ArticleResponse } from '@/types'
-
 const router = useRouter()
 const searchText = ref('')
 const loading = ref(false)
@@ -19,7 +18,7 @@ const statusMap: Record<number, { label: string; color: string }> = {
   0: { label: '草稿', color: 'default' },
   1: { label: '已发布', color: 'green' },
   2: { label: '已下架', color: 'red' },
-  3: { label: '审核中', color: 'orange' }
+  3: { label: '审核中', color: 'orange' },
 }
 
 const columns = [
@@ -29,7 +28,7 @@ const columns = [
   { title: '作者', dataIndex: 'author', key: 'author', width: 100, align: 'center' as const },
   { title: '状态', dataIndex: 'status', key: 'status', width: 100, align: 'center' as const },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 170, align: 'center' as const },
-  { title: '操作', key: 'actions', width: 160, align: 'center' as const }
+  { title: '操作', key: 'actions', width: 120, align: 'center' as const }
 ]
 
 const fetchData = async () => {
@@ -69,10 +68,6 @@ const handleAdd = () => {
   router.push('/articles/new')
 }
 
-const handleEdit = (id: number) => {
-  router.push(`/articles/${id}/edit`)
-}
-
 const handleDelete = async (id: number) => {
   Modal.confirm({
     title: '确认删除',
@@ -97,23 +92,157 @@ const handleDelete = async (id: number) => {
   })
 }
 
-const handleStatusChange = async (id: number, status: number) => {
+// 审核相关
+const rejectModalVisible = ref(false)
+const rejectComment = ref('')
+const currentRejectId = ref(0)
+
+// 下架
+const unpublishModalVisible = ref(false)
+const unpublishComment = ref('')
+const currentUnpublishId = ref(0)
+
+const handleUnpublishClick = (id: number) => {
+  currentUnpublishId.value = id
+  unpublishComment.value = ''
+  unpublishModalVisible.value = true
+}
+
+const handleUnpublishConfirm = async () => {
+  if (!unpublishComment.value.trim()) {
+    message.warning('请输入下架原因')
+    return
+  }
   try {
-    const response = await updateArticleStatus(id, status)
-    if (response.code === 200) {
-      message.success('状态更新成功')
+    const res = await unpublishArticle(currentUnpublishId.value, unpublishComment.value)
+    if (res.code === 200) {
+      message.success('已下架')
+      unpublishModalVisible.value = false
       fetchData()
     } else {
-      message.error(response.msg || '状态更新失败')
+      message.error(res.msg || '操作失败')
     }
-  } catch (error) {
-    console.error('更新文章状态失败:', error)
-    message.error('状态更新失败，请稍后重试')
+  } catch {
+    message.error('操作失败')
   }
 }
 
-const onStatusMenuClick = (id: number, e: { key: string }) => {
-  handleStatusChange(id, Number(e.key))
+const handleApprove = async (id: number) => {
+  try {
+    const res = await approveArticle(id)
+    if (res.code === 200) {
+      message.success('审核通过')
+      fetchData()
+    } else {
+      message.error(res.msg || '操作失败')
+    }
+  } catch {
+    message.error('操作失败')
+  }
+}
+
+const handleReject = (id: number) => {
+  currentRejectId.value = id
+  rejectComment.value = ''
+  rejectModalVisible.value = true
+}
+
+const handleRejectConfirm = async () => {
+  if (!rejectComment.value.trim()) {
+    message.warning('请输入驳回理由')
+    return
+  }
+  try {
+    const res = await rejectArticle(currentRejectId.value, rejectComment.value)
+    if (res.code === 200) {
+      message.success('已驳回')
+      rejectModalVisible.value = false
+      fetchData()
+    } else {
+      message.error(res.msg || '操作失败')
+    }
+  } catch {
+    message.error('操作失败')
+  }
+}
+
+const submittingId = ref(0)
+
+// ====== 提交审核：前端校验 ======
+const validateModalVisible = ref(false)
+const validateErrors = ref<string[]>([])
+const validateArticleId = ref(0)
+
+const handleAction = (record: ArticleResponse, key: string) => {
+  switch (key) {
+    case 'edit':
+      router.push(`/articles/${record.id}/edit`)
+      break
+    case 'delete':
+      handleDelete(record.id)
+      break
+    case 'submit':
+      handleSubmitValidate(record.id)
+      break
+    case 'approve':
+      handleApprove(record.id)
+      break
+    case 'reject':
+      handleReject(record.id)
+      break
+    case 'unpublish':
+      handleUnpublishClick(record.id)
+      break
+  }
+}
+
+const handleSubmitValidate = async (id: number) => {
+  submittingId.value = id
+  try {
+    // 先获取文章详情进行前端校验
+    const articleRes = await getArticleById(id)
+    if (articleRes.code !== 200) {
+      message.error('获取文章信息失败')
+      return
+    }
+
+    const article = articleRes.data
+    const errors: string[] = []
+
+    if (!article.title.trim() || article.title === '无标题') {
+      errors.push('标题不能为空')
+    }
+    if (!article.content.trim()) {
+      errors.push('内容不能为空')
+    }
+    if (!article.categoryId) {
+      errors.push('请选择分类')
+    }
+    const covers = article.coverImage ? article.coverImage.split(',').filter(u => u.trim()) : []
+    if (covers.length !== 3) {
+      errors.push('请上传3张封面图片')
+    }
+
+    if (errors.length > 0) {
+      validateErrors.value = errors
+      validateArticleId.value = id
+      validateModalVisible.value = true
+      return
+    }
+
+    // 校验通过，提交审核
+    const res = await submitForReview(id)
+    if (res.code === 200) {
+      message.success('已提交审核')
+      fetchData()
+    } else {
+      message.error(res.msg || '提交失败')
+    }
+  } catch {
+    message.error('提交失败')
+  } finally {
+    submittingId.value = 0
+  }
 }
 
 fetchData()
@@ -154,31 +283,57 @@ fetchData()
           {{ record.author?.nickname || '-' }}
         </template>
         <template v-if="column.key === 'status'">
-          <a-dropdown>
-            <a-tag :color="statusMap[record.status].color" style="cursor: pointer;">
-              {{ statusMap[record.status].label }}
-            </a-tag>
-            <template #overlay>
-              <a-menu @click="onStatusMenuClick(record.id, $event)">
-                <a-menu-item v-for="(item, key) in statusMap" :key="key" :disabled="Number(key) === record.status">
-                  {{ item.label }}
-                </a-menu-item>
-              </a-menu>
-            </template>
-          </a-dropdown>
+          <a-tag :color="statusMap[record.status].color">
+            {{ statusMap[record.status].label }}
+          </a-tag>
         </template>
         <template v-if="column.key === 'createdAt'">
           {{ formatDate(record.createdAt) }}
         </template>
         <template v-if="column.key === 'actions'">
-          <a-space>
-            <a-button type="primary" size="small" @click="handleEdit(record.id)">编辑</a-button>
-            <a-button size="small" danger @click="handleDelete(record.id)">删除</a-button>
-          </a-space>
+          <a-dropdown>
+            <a-button size="small">操作 <DownOutlined /></a-button>
+            <template #overlay>
+              <a-menu @click="(e: any) => handleAction(record, e.key)">
+                <a-menu-item key="edit">编辑</a-menu-item>
+                <a-menu-item v-if="record.status === 0 || record.status === 2" key="submit">提交审核</a-menu-item>
+                <a-menu-item v-if="record.status === 1" key="unpublish">下架</a-menu-item>
+                <a-menu-item v-if="record.status === 3" key="approve">
+                  <span style="color: #52c41a;">审核通过</span>
+                </a-menu-item>
+                <a-menu-item v-if="record.status === 3" key="reject">
+                  <span style="color: #ff4d4f;">驳回</span>
+                </a-menu-item>
+                <a-menu-divider />
+                <a-menu-item key="delete" danger>删除</a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
         </template>
       </template>
     </a-table>
     </a-card>
+
+    <!-- 驳回弹窗 -->
+    <a-modal v-model:open="rejectModalVisible" title="驳回意见" @ok="handleRejectConfirm">
+      <a-textarea v-model:value="rejectComment" placeholder="请输入驳回原因..." :rows="4" />
+    </a-modal>
+
+    <!-- 下架弹窗 -->
+    <a-modal v-model:open="unpublishModalVisible" title="下架原因" @ok="handleUnpublishConfirm">
+      <a-textarea v-model:value="unpublishComment" placeholder="请输入下架原因..." :rows="4" />
+    </a-modal>
+
+    <!-- 校验失败弹窗 -->
+    <a-modal v-model:open="validateModalVisible" title="无法提交审核" :footer="null">
+      <p style="margin-bottom: 8px; color: #666;">以下必填项未完善，请编辑文章后重试：</p>
+      <ul style="padding-left: 20px; color: #ff4d4f;">
+        <li v-for="err in validateErrors" :key="err">{{ err }}</li>
+      </ul>
+      <div style="margin-top: 16px; text-align: right;">
+        <a-button type="primary" @click="validateModalVisible = false">知道了</a-button>
+      </div>
+    </a-modal>
   </div>
 </template>
 

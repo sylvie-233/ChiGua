@@ -27,10 +27,13 @@ CREATE TABLE article (
     id INT8 GENERATED ALWAYS AS IDENTITY,
     author_id INT8,
     category_id INT8,
-    title VARCHAR(255) NOT NULL,
+    title VARCHAR(255),
     content TEXT,
-    cover_image VARCHAR(255),
-    status INT2,
+    cover_image TEXT,
+    status INT2 DEFAULT 0,
+    reviewer_id INT8 DEFAULT 0,
+    review_comment TEXT DEFAULT '',
+    submitted_at TIMESTAMP,
     publish_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -42,7 +45,10 @@ COMMENT ON COLUMN article.category_id IS '分类ID';
 COMMENT ON COLUMN article.title IS '标题';
 COMMENT ON COLUMN article.content IS '内容';
 COMMENT ON COLUMN article.cover_image IS '首页图';
-COMMENT ON COLUMN article.status IS '状态;0：未发布、1：已发布';
+COMMENT ON COLUMN article.status IS '状态：0：草稿、1：已发布、2：已下架、3：审核中';
+COMMENT ON COLUMN article.reviewer_id IS '审核人ID';
+COMMENT ON COLUMN article.review_comment IS '审核意见';
+COMMENT ON COLUMN article.submitted_at IS '提交审核时间';
 COMMENT ON COLUMN article.publish_at IS '发布时间';
 COMMENT ON COLUMN article.created_at IS '创建时间';
 COMMENT ON COLUMN article.update_at IS '更新时间';
@@ -106,3 +112,22 @@ COMMENT ON COLUMN category.name IS '分类名';
 COMMENT ON COLUMN category.created_at IS '创建时间';
 COMMENT ON COLUMN category.update_at IS '更新时间';
 COMMENT ON TABLE category IS '分类表';
+
+DROP TABLE IF EXISTS article_review_record;
+CREATE TABLE article_review_record (
+    id INT8 GENERATED ALWAYS AS IDENTITY,
+    article_id INT8 NOT NULL,
+    reviewer_id INT8 NOT NULL,
+    action VARCHAR(20) NOT NULL,
+    comment TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);
+COMMENT ON COLUMN article_review_record.id IS 'ID';
+COMMENT ON COLUMN article_review_record.article_id IS '文章ID';
+COMMENT ON COLUMN article_review_record.reviewer_id IS '审核人ID';
+COMMENT ON COLUMN article_review_record.action IS '审核操作：approve=通过, reject=驳回';
+COMMENT ON COLUMN article_review_record.comment IS '审核意见';
+COMMENT ON COLUMN article_review_record.created_at IS '审核时间';
+COMMENT ON TABLE article_review_record IS '文章审核记录表';
+CREATE INDEX IF NOT EXISTS idx_review_record_article_id ON article_review_record(article_id);

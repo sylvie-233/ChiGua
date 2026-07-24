@@ -9,7 +9,7 @@ import (
 )
 
 func GetDashboardStats(c *gin.Context) {
-	var articleTotal, articleDraft, articlePublished, articleUnpublished, articlePending, categoryTotal, tagTotal, commentTotal, userTotal int64
+	var articleTotal, articleDraft, articlePublished, articleUnpublished, articlePendingReview, categoryTotal, tagTotal, commentTotal, userTotal int64
 	var err error
 
 	if articleDraft, err = service.CountArticleByStatus(int(model.ArticleStatusDraft)); err != nil {
@@ -24,11 +24,11 @@ func GetDashboardStats(c *gin.Context) {
 		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
 		return
 	}
-	if articlePending, err = service.CountArticleByStatus(int(model.ArticleStatusPending)); err != nil {
+	if articlePendingReview, err = service.CountArticleByStatus(int(model.ArticleStatusPendingReview)); err != nil {
 		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
 		return
 	}
-	articleTotal = articleDraft + articlePublished + articleUnpublished + articlePending
+	articleTotal = articleDraft + articlePublished + articleUnpublished + articlePendingReview
 
 	if categoryTotal, err = service.CountCategory(); err != nil {
 		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
@@ -62,11 +62,11 @@ func GetDashboardStats(c *gin.Context) {
 
 	c.JSON(int(model.Success), model.SuccessResponse(gin.H{
 		"articles": gin.H{
-			"total":       articleTotal,
-			"draft":       articleDraft,
-			"published":   articlePublished,
-			"unpublished": articleUnpublished,
-			"pending":     articlePending,
+			"total":         articleTotal,
+			"draft":         articleDraft,
+			"published":     articlePublished,
+			"unpublished":   articleUnpublished,
+			"pending": articlePendingReview,
 		},
 		"categories":        categoryTotal,
 		"tags":              tagTotal,

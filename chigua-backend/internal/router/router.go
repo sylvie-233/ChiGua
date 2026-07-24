@@ -27,7 +27,7 @@ func InitRouter(r *gin.Engine) {
 		users.PUT("/me", middleware.AuthMiddleware(), api.UpdateUser)
 	}
 
-	// 文章路由
+	// 文章路由（公共）
 	articles := apiGroup.Group("/article")
 	{
 		articles.POST("", middleware.AuthMiddleware(), api.CreateArticle)
@@ -37,6 +37,8 @@ func InitRouter(r *gin.Engine) {
 		articles.DELETE("/:id", middleware.AuthMiddleware(), api.DeleteArticle)
 		articles.POST("/:id/publish", middleware.AuthMiddleware(), api.PublishArticle)
 		articles.PUT("/:id/status", middleware.AuthMiddleware(), api.UpdateArticleStatus)
+		articles.POST("/:id/submit", middleware.AuthMiddleware(), api.SubmitForReview)
+		articles.GET("/:id/reviews", api.GetArticleReviewRecords)
 	}
 
 	// 评论路由
@@ -73,24 +75,29 @@ func InitRouter(r *gin.Engine) {
 		upload.DELETE("/file", middleware.AuthMiddleware(), api.DeleteFile)
 	}
 
-	// Admin 登录路由（不经过认证中间件）
+	// Admin 登录路由（不经过认证中间件，但检查角色的 admin login 在 admin/login）
 	apiGroup.POST("/admin/login", admin.AdminLogin)
 
-	// Admin 路由组
+	// Admin 文章路由（admin + reviewer 可访问）
+	adminArticles := apiGroup.Group("/admin/article", middleware.AuthMiddleware(), middleware.AdminOrReviewerMiddleware())
+	{
+		adminArticles.POST("", admin.CreateArticle)
+		adminArticles.GET("", admin.GetArticleList)
+		adminArticles.GET("/pending", admin.GetPendingReviewArticles)
+		adminArticles.GET("/reviews", admin.GetReviewRecords)
+		adminArticles.GET("/:id", admin.GetArticleByID)
+		adminArticles.PUT("/:id", admin.UpdateArticle)
+		adminArticles.DELETE("/:id", admin.DeleteArticle)
+		adminArticles.POST("/:id/publish", admin.PublishArticle)
+		adminArticles.PUT("/:id/status", admin.UpdateArticleStatus)
+		adminArticles.POST("/:id/approve", admin.ApproveArticle)
+		adminArticles.POST("/:id/reject", admin.RejectArticle)
+		adminArticles.POST("/:id/unpublish", admin.UnpublishArticle)
+	}
+
+	// Admin 其他路由（仅 admin 可访问）
 	adminGroup := apiGroup.Group("/admin", middleware.AuthMiddleware(), middleware.AdminRoleMiddleware())
 	{
-		// Admin 文章路由
-		adminArticles := adminGroup.Group("/article")
-		{
-			adminArticles.POST("", admin.CreateArticle)
-			adminArticles.GET("", admin.GetArticleList)
-			adminArticles.GET("/:id", admin.GetArticleByID)
-			adminArticles.PUT("/:id", admin.UpdateArticle)
-			adminArticles.DELETE("/:id", admin.DeleteArticle)
-			adminArticles.POST("/:id/publish", admin.PublishArticle)
-			adminArticles.PUT("/:id/status", admin.UpdateArticleStatus)
-		}
-
 		// Admin 分类路由
 		adminCategories := adminGroup.Group("/category")
 		{

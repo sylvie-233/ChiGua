@@ -149,6 +149,11 @@ func PublishArticle(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, service.ErrArticleNoPermission) {
 			c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
+		} else if errors.Is(err, service.ErrArticleNoTitle) ||
+			errors.Is(err, service.ErrArticleNoContent) ||
+			errors.Is(err, service.ErrArticleNoCategory) ||
+			errors.Is(err, service.ErrArticleNoCoverImage) {
+			c.JSON(int(model.BadRequest), model.ErrorResponseWithMsg(model.BadRequest, err.Error()))
 		} else {
 			c.JSON(int(model.NotFound), model.ErrorResponse(model.ArticleNotFound))
 		}
@@ -186,6 +191,13 @@ func UpdateArticleStatus(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, service.ErrArticleNoPermission) {
 			c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
+		} else if errors.Is(err, service.ErrArticleNoTitle) ||
+			errors.Is(err, service.ErrArticleNoContent) ||
+			errors.Is(err, service.ErrArticleNoCategory) ||
+			errors.Is(err, service.ErrArticleNoCoverImage) {
+			c.JSON(int(model.BadRequest), model.ErrorResponseWithMsg(model.BadRequest, err.Error()))
+		} else if errors.Is(err, service.ErrArticleNotPending) {
+			c.JSON(int(model.BadRequest), model.ErrorResponseWithMsg(model.BadRequest, err.Error()))
 		} else {
 			c.JSON(int(model.NotFound), model.ErrorResponse(model.ArticleNotFound))
 		}
@@ -193,4 +205,55 @@ func UpdateArticleStatus(c *gin.Context) {
 	}
 
 	c.JSON(int(model.Success), model.SuccessResponse(nil))
+}
+
+// SubmitForReview 提交文章审核
+func SubmitForReview(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(int(model.Unauthorized), model.ErrorResponse(model.Unauthorized))
+		return
+	}
+
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
+		return
+	}
+
+	err = service.SubmitForReview(id, userID.(int64))
+	if err != nil {
+		if errors.Is(err, service.ErrArticleNoPermission) {
+			c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
+		} else if errors.Is(err, service.ErrArticleNoTitle) ||
+			errors.Is(err, service.ErrArticleNoContent) ||
+			errors.Is(err, service.ErrArticleNoCategory) ||
+			errors.Is(err, service.ErrArticleNoCoverImage) {
+			c.JSON(int(model.BadRequest), model.ErrorResponseWithMsg(model.BadRequest, err.Error()))
+		} else if errors.Is(err, service.ErrArticleNotPending) {
+			c.JSON(int(model.BadRequest), model.ErrorResponseWithMsg(model.BadRequest, err.Error()))
+		} else {
+			c.JSON(int(model.NotFound), model.ErrorResponse(model.ArticleNotFound))
+		}
+		return
+	}
+
+	c.JSON(int(model.Success), model.SuccessResponse(nil))
+}
+
+// GetArticleReviewRecords 获取文章审核记录
+func GetArticleReviewRecords(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
+		return
+	}
+
+	records, err := service.GetReviewRecords(id)
+	if err != nil {
+		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
+		return
+	}
+
+	c.JSON(int(model.Success), model.SuccessResponse(records))
 }

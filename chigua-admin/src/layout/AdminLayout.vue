@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { HomeOutlined, FileOutlined, AppstoreOutlined, TagsOutlined, MessageOutlined, UserOutlined, DownOutlined } from '@ant-design/icons-vue'
+import { HomeOutlined, FileOutlined, FileTextOutlined, AuditOutlined, HistoryOutlined, AppstoreOutlined, TagsOutlined, MessageOutlined, UserOutlined, DownOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { useTabsStore } from '@/stores/tabs'
 import { useUserStore } from '@/stores/user'
@@ -13,16 +13,41 @@ const router = useRouter()
 const tabsStore = useTabsStore()
 const userStore = useUserStore()
 
+const openKeys = ref<string[]>([])
+
 const selectedKeys = computed(() => {
-  if (route.path.startsWith('/articles')) return ['/articles']
-  return [route.path]
+  const path = route.path
+  if (path === '/articles/new' || (path.startsWith('/articles/') && path.endsWith('/edit'))) {
+    // 新建/编辑文章 → 高亮"文章列表"
+    return ['/articles']
+  }
+  if (path.startsWith('/articles')) {
+    // 子菜单项精确匹配
+    return [path]
+  }
+  return [path]
 })
+
+// 当在文章相关页面时，自动展开"文章管理"子菜单
+watch(
+  () => route.path,
+  (path) => {
+    if (path.startsWith('/articles')) {
+      if (!openKeys.value.includes('/articles')) {
+        openKeys.value = ['/articles']
+      }
+    }
+  },
+  { immediate: true }
+)
 
 const menuMap: Record<string, { title: string }> = {
   '/': { title: '首页' },
-  '/articles': { title: '文章管理' },
+  '/articles': { title: '文章列表' },
   '/articles/new': { title: '新建文章' },
   '/articles/edit': { title: '编辑文章' },
+  '/articles/pending': { title: '审核管理' },
+  '/articles/records': { title: '审核记录' },
   '/categories': { title: '分类管理' },
   '/tags': { title: '标签管理' },
   '/comments': { title: '评论管理' },
@@ -102,10 +127,10 @@ const handleLogout = () => {
 const breadcrumbs = computed(() => {
   const items = [{ path: '/', title: '首页' }]
   if (route.path !== '/') {
-    if (route.path.startsWith('/articles/')) {
+    if (route.path.startsWith('/articles')) {
       items.push({ path: '/articles', title: '文章管理' })
       const title = getPageTitle(route.path)
-      if (title && title !== '文章管理') {
+      if (title && title !== '文章列表') {
         items.push({ path: route.path, title })
       }
     } else {
@@ -129,15 +154,27 @@ const roleLabel = computed(() => {
       <div class="logo">
         <span>{{ collapsed ? '🍉' : '🍉 吃瓜网' }}</span>
       </div>
-      <a-menu theme="dark" mode="inline" :selected-keys="selectedKeys" @click="handleMenuClick">
+      <a-menu theme="dark" mode="inline" :selected-keys="selectedKeys" v-model:open-keys="openKeys" @click="handleMenuClick">
         <a-menu-item key="/">
           <component :is="HomeOutlined" />
           <span>首页</span>
         </a-menu-item>
-        <a-menu-item key="/articles">
-          <component :is="FileOutlined" />
-          <span>文章管理</span>
-        </a-menu-item>
+        <a-sub-menu key="/articles">
+          <template #icon><component :is="FileOutlined" /></template>
+          <template #title>文章管理</template>
+          <a-menu-item key="/articles">
+            <component :is="FileTextOutlined" />
+            <span>文章列表</span>
+          </a-menu-item>
+          <a-menu-item v-if="userStore.isAdminOrReviewer" key="/articles/pending">
+            <component :is="AuditOutlined" />
+            <span>审核管理</span>
+          </a-menu-item>
+          <a-menu-item v-if="userStore.isAdminOrReviewer" key="/articles/records">
+            <component :is="HistoryOutlined" />
+            <span>审核记录</span>
+          </a-menu-item>
+        </a-sub-menu>
         <a-menu-item key="/categories">
           <component :is="AppstoreOutlined" />
           <span>分类管理</span>

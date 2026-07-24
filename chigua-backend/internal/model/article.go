@@ -6,30 +6,33 @@ import "time"
 type ArticleStatus int
 
 const (
-	ArticleStatusDraft       ArticleStatus = 0 // 草稿/未发布
-	ArticleStatusPublished   ArticleStatus = 1 // 已发布
-	ArticleStatusUnpublished ArticleStatus = 2 // 已下架/撤回
-	ArticleStatusPending     ArticleStatus = 3 // 审核中
+	ArticleStatusDraft         ArticleStatus = 0 // 草稿
+	ArticleStatusPublished     ArticleStatus = 1 // 已发布
+	ArticleStatusUnpublished   ArticleStatus = 2 // 已下架
+	ArticleStatusPendingReview ArticleStatus = 3 // 审核中
 )
 
 type Article struct {
-	ID         int64     `json:"id" db:"id"`
-	AuthorID   int64     `json:"authorId" db:"author_id"`
-	CategoryID int64     `json:"categoryId" db:"category_id"`
-	Title      string    `json:"title" db:"title" binding:"required"`
-	Content    string    `json:"content" db:"content"`
-	CoverImage string    `json:"coverImage" db:"cover_image"`
-	Status     int       `json:"status" db:"status"`
-	PublishAt  time.Time `json:"publishAt" db:"publish_at"`
-	CreatedAt  time.Time `json:"createdAt" db:"created_at"`
-	UpdateAt   time.Time `json:"updateAt" db:"update_at"`
+	ID            int64     `json:"id" db:"id"`
+	AuthorID      int64     `json:"authorId" db:"author_id"`
+	CategoryID    int64     `json:"categoryId" db:"category_id"`
+	Title         string    `json:"title" db:"title" binding:"required"`
+	Content       string    `json:"content" db:"content"`
+	CoverImage    string    `json:"coverImage" db:"cover_image"`
+	Status        int       `json:"status" db:"status"`
+	ReviewerID    int64     `json:"reviewerId" db:"reviewer_id"`
+	ReviewComment string    `json:"reviewComment" db:"review_comment"`
+	SubmittedAt   time.Time `json:"submittedAt" db:"submitted_at"`
+	PublishAt     time.Time `json:"publishAt" db:"publish_at"`
+	CreatedAt     time.Time `json:"createdAt" db:"created_at"`
+	UpdateAt      time.Time `json:"updateAt" db:"update_at"`
 }
 
 type ArticleCreate struct {
-	Title      string  `json:"title" binding:"required"`
+	Title      string  `json:"title"`
 	Content    string  `json:"content"`
 	CoverImage string  `json:"coverImage"`
-	CategoryID int64   `json:"categoryId" binding:"required"`
+	CategoryID int64   `json:"categoryId"`
 	TagIDs     []int64 `json:"tagIds"`
 }
 
@@ -45,20 +48,66 @@ type ArticleStatusUpdate struct {
 	Status int `json:"status"`
 }
 
+// ReviewAction 审核操作请求
+type ReviewAction struct {
+	Comment string `json:"comment"` // 审核意见
+}
+
+// ArticleReviewRecord 审核记录
+type ArticleReviewRecord struct {
+	ID         int64     `json:"id" db:"id"`
+	ArticleID  int64     `json:"articleId" db:"article_id"`
+	ReviewerID int64     `json:"reviewerId" db:"reviewer_id"`
+	Action     string    `json:"action" db:"action"` // "approve" / "reject"
+	Comment    string    `json:"comment" db:"comment"`
+	CreatedAt  time.Time `json:"createdAt" db:"created_at"`
+}
+
+// ArticleReviewRecordResponse 审核记录响应（含审核人信息）
+type ArticleReviewRecordResponse struct {
+	ID        int64        `json:"id"`
+	ArticleID int64        `json:"articleId"`
+	Action    string       `json:"action"`
+	Comment   string       `json:"comment"`
+	CreatedAt time.Time    `json:"createdAt"`
+	Reviewer  UserResponse `json:"reviewer"`
+}
+
+// ArticleReviewRecordListResponse 审核记录列表响应（含文章标题）
+type ArticleReviewRecordListResponse struct {
+	ID           int64        `json:"id"`
+	ArticleID    int64        `json:"articleId"`
+	ArticleTitle string       `json:"articleTitle"`
+	Action       string       `json:"action"`
+	Comment      string       `json:"comment"`
+	CreatedAt    time.Time    `json:"createdAt"`
+	Reviewer     UserResponse `json:"reviewer"`
+}
+
+// ArticleReviewRecordList 审核记录分页列表
+type ArticleReviewRecordList struct {
+	PageResponse
+	Items []ArticleReviewRecordListResponse `json:"items"`
+}
+
 type ArticleResponse struct {
-	ID         int64        `json:"id"`
-	AuthorID   int64        `json:"authorId"`
-	CategoryID int64        `json:"categoryId"`
-	Title      string       `json:"title"`
-	Content    string       `json:"content"`
-	CoverImage string       `json:"coverImage"`
-	Status     int          `json:"status"`
-	PublishAt  time.Time    `json:"publishAt"`
-	CreatedAt  time.Time    `json:"createdAt"`
-	UpdateAt   time.Time    `json:"updateAt"`
-	Tags       []Tag        `json:"tags"`
-	Category   Category     `json:"category"`
-	Author     UserResponse `json:"author"`
+	ID            int64        `json:"id"`
+	AuthorID      int64        `json:"authorId"`
+	CategoryID    int64        `json:"categoryId"`
+	Title         string       `json:"title"`
+	Content       string       `json:"content"`
+	CoverImage    string       `json:"coverImage"`
+	Status        int          `json:"status"`
+	ReviewerID    int64        `json:"reviewerId"`
+	ReviewComment string       `json:"reviewComment"`
+	SubmittedAt   time.Time    `json:"submittedAt"`
+	PublishAt     time.Time    `json:"publishAt"`
+	CreatedAt     time.Time    `json:"createdAt"`
+	UpdateAt      time.Time    `json:"updateAt"`
+	Tags          []Tag        `json:"tags"`
+	Category      Category     `json:"category"`
+	Author        UserResponse `json:"author"`
+	Reviewer      *UserResponse `json:"reviewer,omitempty"`
 }
 
 type ArticleList struct {

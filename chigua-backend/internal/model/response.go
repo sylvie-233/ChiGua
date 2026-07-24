@@ -46,11 +46,13 @@ const (
 	PasswordError    ResponseCode = 1003
 	TokenExpired     ResponseCode = 1004
 	TokenInvalid     ResponseCode = 1005
-	ArticleNotFound  ResponseCode = 2000
-	CategoryExists   ResponseCode = 2001
-	CategoryNotFound ResponseCode = 2002
-	TagExists        ResponseCode = 2003
-	TagNotFound      ResponseCode = 2004
+	ArticleNotFound        ResponseCode = 2000
+	CategoryExists         ResponseCode = 2001
+	CategoryNotFound       ResponseCode = 2002
+	TagExists              ResponseCode = 2003
+	TagNotFound            ResponseCode = 2004
+	ArticleAlreadyReviewed ResponseCode = 2005 // 文章已被审核
+	ArticleNotPending      ResponseCode = 2006 // 文章不在审核中
 )
 
 // GetMsg 获取响应码对应的消息
@@ -102,6 +104,10 @@ func (c ResponseCode) GetMsg() string {
 		return "标签已存在"
 	case TagNotFound:
 		return "标签不存在"
+	case ArticleAlreadyReviewed:
+		return "文章已审核"
+	case ArticleNotPending:
+		return "文章不在审核中"
 	default:
 		return "未知错误"
 	}
@@ -124,4 +130,9 @@ func SuccessResponse(data interface{}) Response {
 // ErrorResponse 创建错误响应
 func ErrorResponse(code ResponseCode) Response {
 	return NewResponse(code, nil)
+}
+
+// ErrorResponseWithMsg 创建带自定义消息的错误响应
+func ErrorResponseWithMsg(code ResponseCode, msg string) Response {
+	return Response{Code: int(code), Msg: msg, Data: nil}
 }

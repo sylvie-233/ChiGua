@@ -23,7 +23,7 @@ func AdminLogin(c *gin.Context) {
 		return
 	}
 
-	if user.Role != "admin" {
+	if user.Role != "admin" && user.Role != "reviewer" {
 		c.JSON(int(model.Forbidden), model.ErrorResponse(model.Forbidden))
 		return
 	}
@@ -49,7 +49,7 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	if userCreate.Role != "admin" && userCreate.Role != "user" {
+	if userCreate.Role != "admin" && userCreate.Role != "user" && userCreate.Role != "reviewer" {
 		userCreate.Role = "user"
 	}
 
@@ -82,7 +82,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	if userUpdate.Role != "" && userUpdate.Role != "admin" && userUpdate.Role != "user" {
+	if userUpdate.Role != "" && userUpdate.Role != "admin" && userUpdate.Role != "user" && userUpdate.Role != "reviewer" {
 		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
 		return
 	}
@@ -149,7 +149,7 @@ func UpdateUserRole(c *gin.Context) {
 		return
 	}
 
-	if roleUpdate.Role != "admin" && roleUpdate.Role != "user" {
+	if roleUpdate.Role != "admin" && roleUpdate.Role != "user" && roleUpdate.Role != "reviewer" {
 		c.JSON(int(model.BadRequest), model.ErrorResponse(model.BadRequest))
 		return
 	}
