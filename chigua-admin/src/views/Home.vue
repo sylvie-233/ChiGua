@@ -359,8 +359,8 @@ const handleArticleClick = (article: { id: number; title: string }) => {
                     class="week-column"
                   >
                     <template
-                      v-for="(day, dayIndex) in week"
-                      :key="dayIndex"
+                      v-for="(day, _dayIndex) in week"
+                      :key="_dayIndex"
                     >
                       <a-tooltip :title="day.date + ': ' + day.count + '篇文章'">
                         <div

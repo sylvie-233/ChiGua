@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Modal } from 'ant-design-vue'
+import { Modal, message } from 'ant-design-vue'
 import { getCommentList, deleteComment } from '@/api/comment'
 import { formatDate } from '@/utils/date'
 import { createPagination, zebraRow, emptyText } from '@/utils/table'
@@ -56,16 +56,20 @@ const handleDelete = async (id: number) => {
     title: '确认删除',
     content: '确定要删除这条评论吗？此操作不可撤销。',
     okText: '删除',
-    okType: 'danger',
+    okButtonProps: { danger: true },
     cancelText: '取消',
     async onOk() {
       try {
         const response = await deleteComment(id)
         if (response.code === 200) {
+          message.success('删除成功')
           fetchData()
+        } else {
+          message.error(response.msg || '删除失败')
         }
       } catch (error) {
         console.error('删除评论失败:', error)
+        message.error('删除失败，请稍后重试')
       }
     }
   })
@@ -106,7 +110,7 @@ fetchData()
           {{ formatDate(record.createdAt) }}
         </template>
         <template v-if="column.key === 'actions'">
-          <a-button size="small" type="danger" @click="handleDelete(record.id)">删除</a-button>
+          <a-button size="small" danger @click="handleDelete(record.id)">删除</a-button>
         </template>
       </template>
     </a-table>

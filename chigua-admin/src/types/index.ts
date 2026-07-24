@@ -20,6 +20,7 @@ export interface UserResponse {
   nickname: string
   role: string
   createdAt: string
+  updateAt: string
 }
 
 export interface Category {

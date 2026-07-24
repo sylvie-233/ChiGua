@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { PlusOutlined } from '@ant-design/icons-vue'
-import { Modal } from 'ant-design-vue'
+import { Modal, message } from 'ant-design-vue'
 import { getArticleList, deleteArticle, updateArticleStatus } from '@/api/article'
 import { formatDate } from '@/utils/date'
 import { createPagination, zebraRow, emptyText } from '@/utils/table'
@@ -78,16 +78,20 @@ const handleDelete = async (id: number) => {
     title: '确认删除',
     content: '确定要删除这篇文章吗？此操作不可撤销。',
     okText: '删除',
-    okType: 'danger',
+    okButtonProps: { danger: true },
     cancelText: '取消',
     async onOk() {
       try {
         const response = await deleteArticle(id)
         if (response.code === 200) {
+          message.success('删除成功')
           fetchData()
+        } else {
+          message.error(response.msg || '删除失败')
         }
       } catch (error) {
         console.error('删除文章失败:', error)
+        message.error('删除失败，请稍后重试')
       }
     }
   })
@@ -97,10 +101,14 @@ const handleStatusChange = async (id: number, status: number) => {
   try {
     const response = await updateArticleStatus(id, status)
     if (response.code === 200) {
+      message.success('状态更新成功')
       fetchData()
+    } else {
+      message.error(response.msg || '状态更新失败')
     }
   } catch (error) {
     console.error('更新文章状态失败:', error)
+    message.error('状态更新失败，请稍后重试')
   }
 }
 
@@ -164,8 +172,8 @@ fetchData()
         </template>
         <template v-if="column.key === 'actions'">
           <a-space>
-            <a-button size="small" @click="handleEdit(record.id)">编辑</a-button>
-            <a-button size="small" type="danger" @click="handleDelete(record.id)">删除</a-button>
+            <a-button type="primary" size="small" @click="handleEdit(record.id)">编辑</a-button>
+            <a-button size="small" danger @click="handleDelete(record.id)">删除</a-button>
           </a-space>
         </template>
       </template>

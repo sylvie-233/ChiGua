@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { HomeOutlined, FileOutlined, AppstoreOutlined, TagsOutlined, MessageOutlined, UserOutlined, DownOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import { useTabsStore } from '@/stores/tabs'
 import { useUserStore } from '@/stores/user'
 import { getCurrentUser } from '@/api/user'
@@ -94,6 +95,7 @@ const handleTabEdit = (targetKey: string | MouseEvent, action: 'add' | 'remove')
 const handleLogout = () => {
   userStore.logout()
   tabsStore.removeAllTabs()
+  message.success('已退出登录')
   router.push('/login')
 }
 

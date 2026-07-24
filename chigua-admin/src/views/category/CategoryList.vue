@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { PlusOutlined, EditOutlined } from '@ant-design/icons-vue'
-import { Modal } from 'ant-design-vue'
+import { Modal, message } from 'ant-design-vue'
 import { getCategoryList, createCategory, updateCategory, deleteCategory } from '@/api/category'
 import { formatDate } from '@/utils/date'
 import { createPagination, zebraRow, emptyText } from '@/utils/table'
@@ -77,16 +77,20 @@ const handleDelete = async (id: number) => {
     title: '确认删除',
     content: '确定要删除这个分类吗？此操作不可撤销。',
     okText: '删除',
-    okType: 'danger',
+    okButtonProps: { danger: true },
     cancelText: '取消',
     async onOk() {
       try {
         const response = await deleteCategory(id)
         if (response.code === 200) {
+          message.success('删除成功')
           fetchData()
+        } else {
+          message.error(response.msg || '删除失败')
         }
       } catch (error) {
         console.error('删除分类失败:', error)
+        message.error('删除失败，请稍后重试')
       }
     }
   })
@@ -94,6 +98,7 @@ const handleDelete = async (id: number) => {
 
 const handleModalSubmit = async () => {
   if (!form.name.trim()) {
+    message.warning('请输入分类名称')
     return
   }
   modalLoading.value = true
@@ -102,11 +107,15 @@ const handleModalSubmit = async () => {
       ? await updateCategory(editingId.value, { name: form.name.trim() })
       : await createCategory({ name: form.name.trim() })
     if (response.code === 200) {
+      message.success(isEdit.value ? '编辑成功' : '新增分类成功')
       modalVisible.value = false
       fetchData()
+    } else {
+      message.error(response.msg || '保存失败')
     }
   } catch (error) {
     console.error(isEdit.value ? '更新分类失败:' : '创建分类失败:', error)
+    message.error('保存失败，请稍后重试')
   } finally {
     modalLoading.value = false
   }
@@ -152,11 +161,11 @@ fetchData()
         </template>
         <template v-if="column.key === 'actions'">
           <a-space>
-            <a-button size="small" @click="handleEdit(record)">
+            <a-button type="primary" size="small" @click="handleEdit(record)">
               <component :is="EditOutlined" />
               编辑
             </a-button>
-            <a-button size="small" type="danger" @click="handleDelete(record.id)">删除</a-button>
+            <a-button danger size="small" @click="handleDelete(record.id)">删除</a-button>
           </a-space>
         </template>
       </template>

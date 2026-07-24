@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { PlusOutlined } from '@ant-design/icons-vue'
-import { Modal } from 'ant-design-vue'
+import { Modal, message } from 'ant-design-vue'
 import { getUserList, deleteUser, updateUserRole, createUser, updateUser } from '@/api/user'
 import { formatDate } from '@/utils/date'
 import { createPagination, zebraRow, emptyText } from '@/utils/table'
-import type { UserResponse, UserCreate, UserUpdate } from '@/api/user'
+import type { UserCreate, UserUpdate } from '@/api/user'
+import type { UserResponse } from '@/types'
 
 const searchText = ref('')
 const loading = ref(false)
@@ -62,16 +63,20 @@ const handleDelete = async (id: number) => {
     title: '确认删除',
     content: '确定要删除这个用户吗？此操作不可撤销。',
     okText: '删除',
-    okType: 'danger',
+    okButtonProps: { danger: true },
     cancelText: '取消',
     async onOk() {
       try {
         const response = await deleteUser(id)
         if (response.code === 200) {
+          message.success('删除成功')
           fetchData()
+        } else {
+          message.error(response.msg || '删除失败')
         }
       } catch (error) {
         console.error('删除用户失败:', error)
+        message.error('删除失败，请稍后重试')
       }
     }
   })
@@ -89,10 +94,14 @@ const handleRoleChange = async (id: number, currentRole: string) => {
       try {
         const response = await updateUserRole(id, newRole)
         if (response.code === 200) {
+          message.success('角色修改成功')
           fetchData()
+        } else {
+          message.error(response.msg || '角色修改失败')
         }
       } catch (error) {
         console.error('修改用户角色失败:', error)
+        message.error('角色修改失败，请稍后重试')
       }
     }
   })
@@ -133,12 +142,12 @@ const openEditDialog = (record: UserResponse) => {
 }
 
 const handleSubmit = async () => {
-  if (!form.username) {
-    Modal.error({ title: '提示', content: '请输入用户名' })
+  if (!form.username.trim()) {
+    message.warning('请输入用户名')
     return
   }
   if (!isEdit.value && !form.password) {
-    Modal.error({ title: '提示', content: '请输入密码' })
+    message.warning('请输入密码')
     return
   }
 
@@ -151,20 +160,28 @@ const handleSubmit = async () => {
       }
       const response = await updateUser(editingId.value, updateData)
       if (response.code === 200) {
+        message.success('编辑成功')
         formVisible.value = false
         fetchData()
+      } else {
+        message.error(response.msg || '保存失败')
       }
     } else {
       const response = await createUser(form)
       if (response.code === 200) {
+        message.success('新增用户成功')
         formVisible.value = false
         fetchData()
+      } else {
+        message.error(response.msg || '保存失败')
       }
     }
   } catch (error: any) {
     console.error('保存用户失败:', error)
     if (error.response?.data?.code === 400 && error.response?.data?.msg === '用户已存在') {
-      Modal.error({ title: '提示', content: '用户名已存在' })
+      message.error('用户名已存在')
+    } else {
+      message.error('保存失败，请稍后重试')
     }
   } finally {
     loading.value = false
@@ -212,8 +229,8 @@ fetchData()
         </template>
         <template v-if="column.key === 'actions'">
           <a-space>
-            <a-button size="small" @click="openEditDialog(record)">编辑</a-button>
-            <a-button size="small" type="danger" @click="handleDelete(record.id)">删除</a-button>
+            <a-button type="primary" size="small" @click="openEditDialog(record)">编辑</a-button>
+            <a-button size="small" danger @click="handleDelete(record.id)">删除</a-button>
           </a-space>
         </template>
       </template>

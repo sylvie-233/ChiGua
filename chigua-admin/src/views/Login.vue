@@ -2,6 +2,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import request from '@/api/request'
 import type { BaseResponse, UserResponse } from '@/types'
 import { useUserStore } from '@/stores/user'
@@ -24,24 +25,19 @@ const adminLogin = async (data: LoginParams): Promise<BaseResponse<LoginResponse
 const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(false)
-const modalVisible = ref(false)
-const modalTitle = ref('')
-const modalContent = ref('')
 
 const form = reactive({
   username: '',
   password: ''
 })
 
-const showModal = (title: string, content: string) => {
-  modalTitle.value = title
-  modalContent.value = content
-  modalVisible.value = true
-}
-
 const handleLogin = async () => {
-  if (!form.username || !form.password) {
-    showModal('提示', '请输入用户名和密码')
+  if (!form.username.trim()) {
+    message.warning('请输入用户名')
+    return
+  }
+  if (!form.password) {
+    message.warning('请输入密码')
     return
   }
 
@@ -51,65 +47,63 @@ const handleLogin = async () => {
     if (response.code === 200) {
       userStore.setToken(response.data.token)
       userStore.setUserInfo(response.data.user)
+      message.success('登录成功')
       router.push('/')
     } else if (response.code === 403) {
-      showModal('登录失败', '无管理员权限')
+      message.error('无管理员权限，请联系管理员')
     } else {
-      showModal('登录失败', response.msg || '登录失败')
+      message.error(response.msg || '登录失败，请重试')
     }
   } catch (error: any) {
     console.error('登录失败:', error)
     if (error.response) {
       if (error.response.data?.code === 403) {
-        showModal('登录失败', '无管理员权限')
+        message.error('无管理员权限，请联系管理员')
       } else {
-        showModal('登录失败', error.response.data?.msg || '登录失败')
+        message.error(error.response.data?.msg || '登录失败，请重试')
       }
     } else {
-      showModal('网络错误', '网络连接失败，请稍后重试')
+      message.error('网络连接失败，请稍后重试')
     }
   } finally {
     loading.value = false
   }
 }
+
+const onKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Enter') {
+    handleLogin()
+  }
+}
 </script>
 
 <template>
-  <div class="login-container">
+  <div class="login-container" @keydown="onKeydown">
     <div class="login-content">
       <div class="login-header">
         <h1>🍉 吃瓜网</h1>
         <p>后台管理系统</p>
       </div>
-      <a-form :model="form" class="login-form">
+      <a-form :model="form" class="login-form" @submit.prevent="handleLogin">
         <a-form-item name="username" :rules="[{ required: true, message: '请输入用户名' }]">
-          <a-input v-model:value="form.username" placeholder="用户名" size="large">
+          <a-input v-model:value="form.username" placeholder="用户名" size="large" autocomplete="username">
             <template #prefix><component :is="UserOutlined" /></template>
           </a-input>
         </a-form-item>
         <a-form-item name="password" :rules="[{ required: true, message: '请输入密码' }]">
-          <a-input-password v-model:value="form.password" placeholder="密码" size="large">
+          <a-input-password v-model:value="form.password" placeholder="密码" size="large" autocomplete="current-password">
             <template #prefix><component :is="LockOutlined" /></template>
           </a-input-password>
         </a-form-item>
 
         <a-form-item>
-          <a-button type="primary" size="large" block @click="handleLogin" :loading="loading">
+          <a-button type="primary" size="large" block html-type="submit" :loading="loading">
             登录
           </a-button>
         </a-form-item>
       </a-form>
     </div>
   </div>
-
-  <a-modal
-    v-model:visible="modalVisible"
-    :title="modalTitle"
-    :footer="null"
-    centered
-  >
-    <p>{{ modalContent }}</p>
-  </a-modal>
 </template>
 
 <style scoped>
