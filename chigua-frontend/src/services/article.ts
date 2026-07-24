@@ -12,7 +12,10 @@ export const articleApi = {
       total: number
       page: number
       pageSize: number
-    }>("/article/list", { params })
+      totalPages: number
+      hasNext: boolean
+      hasPrev: boolean
+    }>("/article", { params })
   },
 
   async getArticleById(id: number) {
@@ -21,9 +24,10 @@ export const articleApi = {
 
   async createArticle(data: {
     title: string
-    content: string
-    category_id: number
-    tag_ids?: number[]
+    content?: string
+    coverImage?: string
+    categoryId: number
+    tagIds?: number[]
   }) {
     return typedApi.post<Article>("/article", data)
   },
@@ -33,8 +37,9 @@ export const articleApi = {
     data: {
       title?: string
       content?: string
-      category_id?: number
-      tag_ids?: number[]
+      coverImage?: string
+      categoryId?: number
+      tagIds?: number[]
     }
   ) {
     return typedApi.put<Article>(`/article/${id}`, data)

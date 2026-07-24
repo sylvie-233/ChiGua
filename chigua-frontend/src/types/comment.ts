@@ -1,12 +1,25 @@
 import type { User } from "./user"
 
-// 评论类型
+// 评论类型（对齐后端 CommentResponse）
 export interface Comment {
   id: number
-  article_id: number
-  user_id: number
-  user: User
+  parentId: number
+  articleId: number
+  replyUserId: number
+  userId: number
   content: string
-  created_at: string
-  updated_at: string
+  createdAt: string
+  user?: User
+  replyUser?: User
+  children?: CommentPage
+}
+
+export interface CommentPage {
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+  hasNext: boolean
+  hasPrev: boolean
+  items: Comment[]
 }

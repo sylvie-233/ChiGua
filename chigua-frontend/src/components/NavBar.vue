@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { ref, onMounted } from "vue"
 import { useRouter } from "vue-router"
 import { useAuthStore } from "@/stores/auth"
 import { message } from "ant-design-vue"
+import { categoryApi } from "@/services/category"
+import type { Category } from "@/types/category"
 import AuthModal from "./AuthModal.vue"
 
 const router = useRouter()
 const authStore = useAuthStore()
 const showAuthModal = ref(false)
 const showLogoutMenu = ref(false)
+const categories = ref<Category[]>([])
 
 const openAuthModal = () => {
   showAuthModal.value = true
@@ -23,17 +26,27 @@ const handleProfile = () => {
   router.push("/profile")
 }
 
-const handleAdmin = () => {
-  showLogoutMenu.value = false
-  router.push("/admin/article")
-}
-
 const handleLogout = () => {
   authStore.logout()
   showLogoutMenu.value = false
   router.push("/")
   message.success("退出登录成功")
 }
+
+const handleCategoryClick = (categoryId: number) => {
+  router.push(`/category/${categoryId}`)
+}
+
+onMounted(async () => {
+  try {
+    const res = await categoryApi.getAllCategories()
+    if (res.code === 200 && res.data) {
+      categories.value = res.data
+    }
+  } catch (error) {
+    console.error("获取分类列表失败:", error)
+  }
+})
 </script>
 
 <template>
@@ -54,43 +67,21 @@ const handleLogout = () => {
             </router-link>
           </div>
 
-          <!-- 中间：分类列表（仅在中等及以上屏幕显示） -->
+          <!-- 中间：分类列表 -->
           <div class="hidden md:flex items-center justify-center gap-6">
             <router-link
               to="/"
               class="text-white hover:text-primary font-medium"
               >首页</router-link
             >
-            <router-link
-              to="/category/1"
-              class="text-white hover:text-primary font-medium"
-              >前端技术</router-link
+            <a
+              v-for="cat in categories"
+              :key="cat.id"
+              class="text-white hover:text-primary font-medium cursor-pointer"
+              @click="handleCategoryClick(cat.id)"
             >
-            <router-link
-              to="/category/2"
-              class="text-white hover:text-primary font-medium"
-              >后端技术</router-link
-            >
-            <router-link
-              to="/category/3"
-              class="text-white hover:text-primary font-medium"
-              >移动开发</router-link
-            >
-            <router-link
-              to="/category/4"
-              class="text-white hover:text-primary font-medium"
-              >人工智能</router-link
-            >
-            <router-link
-              to="/category/5"
-              class="text-white hover:text-primary font-medium"
-              >区块链</router-link
-            >
-            <router-link
-              to="/about"
-              class="text-white hover:text-primary font-medium"
-              >关于我们</router-link
-            >
+              {{ cat.name }}
+            </a>
           </div>
 
           <!-- 右侧：搜索和登录按钮 -->
@@ -146,10 +137,14 @@ const handleLogout = () => {
                 @mouseenter="showLogoutMenu = true"
                 @mouseleave="showLogoutMenu = false"
               >
-                <button
-                  class="w-10 h-10 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center transition-colors"
-                >
+                <button class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center transition-colors">
+                  <img
+                    v-if="authStore.user?.avatar"
+                    :src="authStore.user.avatar"
+                    class="w-full h-full object-cover"
+                  />
                   <svg
+                    v-else
                     class="w-6 h-6 text-white"
                     fill="currentColor"
                     viewBox="0 0 24 24"
@@ -157,7 +152,7 @@ const handleLogout = () => {
                   >
                     <path
                       fill-rule="evenodd"
-                      d="M18 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                       clip-rule="evenodd"
                     />
                   </svg>
@@ -166,8 +161,18 @@ const handleLogout = () => {
                 <!-- 下拉菜单 -->
                 <div
                   v-show="showLogoutMenu"
-                  class="absolute right-0 top-full w-32 bg-gray-800 rounded-lg shadow-xl py-2 z-50"
+                  class="absolute right-0 top-full w-40 bg-gray-800 rounded-lg shadow-xl z-50"
                 >
+                  <!-- 用户信息 -->
+                  <div class="px-4 py-3 border-b border-gray-700">
+                    <p class="text-white text-sm font-medium truncate">
+                      {{ authStore.user?.nickname || authStore.user?.username }}
+                    </p>
+                    <p class="text-gray-500 text-xs truncate mt-0.5">
+                      {{ authStore.user?.username }}
+                    </p>
+                  </div>
+                  <div class="py-1">
                   <button
                     class="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                     @click="handleProfile"
@@ -175,18 +180,12 @@ const handleLogout = () => {
                     个人中心
                   </button>
                   <button
-                    v-if="authStore.user?.role === 'admin'"
-                    class="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                    @click="handleAdmin"
-                  >
-                    后台管理
-                  </button>
-                  <button
                     class="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                     @click="handleLogout"
                   >
                     退出登录
                   </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -16,6 +16,10 @@ const api = axios.create({
 api.interceptors.request.use(
   config => {
     NProgress.start()
+    // FormData 需要浏览器自动设置 Content-Type（含 boundary）
+    if (config.data instanceof FormData) {
+      config.headers.set("Content-Type", null)
+    }
     const authStore = localStorage.getItem("auth")
     if (authStore) {
       try {

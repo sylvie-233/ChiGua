@@ -4,6 +4,7 @@ import { useRoute } from "vue-router"
 import { articleApi } from "@/services"
 import type { Article } from "@/types/article"
 import { renderMarkdown } from "@/utils/markdown"
+import { formatDateTimeFull } from "@/utils/dateFormat"
 
 const route = useRoute()
 const article = ref<Article | null>(null)
@@ -13,6 +14,15 @@ const error = ref("")
 const renderedContent = computed(() => {
   if (!article.value?.content) return ""
   return renderMarkdown(article.value.content)
+})
+
+const displayAuthor = computed(() => {
+  const author = article.value?.author
+  if (!author) return { name: "未知", initial: "?" }
+  return {
+    name: author.nickname || author.username,
+    initial: (author.nickname || author.username).charAt(0).toUpperCase()
+  }
 })
 
 onMounted(async () => {
@@ -39,7 +49,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-900 text-white">
+  <div class="bg-[#262626] text-white min-h-[calc(100vh-72px)] pb-8">
     <!-- 文章详情容器 -->
     <div class="max-w-4xl mx-auto px-4 py-8">
       <!-- 加载状态 -->
@@ -55,63 +65,82 @@ onMounted(async () => {
       </div>
 
       <!-- 文章内容 -->
-      <article v-else-if="article" class="space-y-8">
-        <!-- 标题 -->
-        <header class="text-center border-b border-gray-700 pb-6">
+      <article v-else-if="article">
+        <!-- 顶部区域：标题 + 作者信息 + 面包屑 -->
+        <header class="border-b border-gray-700/80 pb-6 mb-8">
+          <!-- 标题 -->
           <h1
-            class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent"
+            class="text-2xl md:text-3xl font-bold text-white leading-snug mb-5"
           >
             {{ article.title }}
           </h1>
+
+          <!-- 作者信息行 -->
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <!-- 头像 -->
+              <img
+                v-if="article.author?.avatar"
+                :src="article.author.avatar"
+                class="w-9 h-9 rounded-full object-cover shrink-0"
+                @error="$event.target.style.display = 'none'"
+              />
+              <div
+                v-else
+                class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                style="background-color: #1e8d77"
+              >
+                <span class="text-sm font-bold text-white">{{ displayAuthor.initial }}</span>
+              </div>
+              <!-- 名称和时间 -->
+              <div class="flex items-center gap-2 text-sm">
+                <span class="text-gray-300 font-medium">{{ displayAuthor.name }}</span>
+                <span class="text-gray-600">·</span>
+                <span class="text-gray-500">{{ formatDateTimeFull(article.publishAt || article.createdAt) }}</span>
+              </div>
+            </div>
+
+            <!-- 右侧：来源等信息 -->
+            <div class="flex items-center gap-2 text-sm text-gray-500">
+              <span>来源：{{ article.author.username }}</span>
+            </div>
+          </div>
+
+          <!-- 面包屑 -->
+          <nav class="flex items-center gap-2 text-sm">
+            <router-link to="/" class="hover:underline transition-colors" style="color: #1e8d77">
+              首页
+            </router-link>
+            <span class="text-gray-500">&gt;</span>
+            <router-link
+              v-if="article.category"
+              :to="`/category/${article.category.id}`"
+              class="hover:underline transition-colors"
+              style="color: #1e8d77"
+            >
+              {{ article.category.name }}
+            </router-link>
+            <span v-else style="color: #1e8d77">资讯</span>
+          </nav>
         </header>
-
-        <!-- 作者信息 -->
-        <div
-          class="flex items-center justify-center gap-4 py-4 bg-gray-800/50 rounded-lg px-6"
-        >
-          <div
-            class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center"
-          >
-            <span class="text-xl font-bold">{{
-              article.author.username.charAt(0).toUpperCase()
-            }}</span>
-          </div>
-          <div class="text-left">
-            <p class="font-semibold">{{ article.author.username }}</p>
-            <p class="text-gray-400 text-sm">{{ article.author.email }}</p>
-          </div>
-          <div class="text-gray-500 text-sm ml-auto">
-            <span>{{ article.created_at }}</span>
-          </div>
-        </div>
-
-        <!-- 文章分类 -->
-        <div class="flex items-center gap-2">
-          <span class="text-gray-400">分类：</span>
-          <span
-            class="px-4 py-1 bg-purple-600/30 text-purple-300 rounded-full text-sm"
-          >
-            {{ article.category?.name || "未分类" }}
-          </span>
-        </div>
 
         <!-- 文章内容 -->
         <div
-          class="prose prose-invert max-w-none bg-gray-800/30 rounded-xl p-8 markdown-body"
+          class="prose prose-invert max-w-none bg-white/5 backdrop-blur-sm rounded-xl p-8 markdown-body border border-white/5"
           v-html="renderedContent"
         ></div>
 
         <!-- 文章标签 -->
-        <div class="flex flex-wrap gap-3 pt-4 border-t border-gray-700">
+        <div class="flex flex-wrap gap-3 mt-8 pt-4 border-t border-gray-700">
           <span class="text-gray-400">标签：</span>
           <span
             v-for="tag in article.tags"
             :key="tag.id"
-            class="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm hover:bg-gray-600 transition-colors cursor-pointer"
+            class="px-3 py-1 bg-white/10 backdrop-blur-sm text-gray-300 rounded-full text-sm hover:bg-white/20 transition-colors cursor-pointer"
           >
-            #{{ tag.name }}
+            {{ tag.name }}
           </span>
-          <span v-if="article.tags.length === 0" class="text-gray-500 text-sm"
+          <span v-if="!article.tags || article.tags.length === 0" class="text-gray-500 text-sm"
             >暂无标签</span
           >
         </div>

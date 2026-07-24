@@ -2,17 +2,23 @@ import type { User } from "./user"
 import type { Category } from "./category"
 import type { Tag } from "./tag"
 
-// 文章类型
+// 文章类型（对齐后端 ArticleResponse）
 export interface Article {
   id: number
+  authorId: number
+  categoryId: number
   title: string
   content: string
+  coverImage: string
   status: number
-  author_id: number
-  author: User
-  category_id: number
-  category: Category
+  reviewerId: number
+  reviewComment: string
+  submittedAt: string
+  publishAt: string
+  createdAt: string
+  updateAt: string
   tags: Tag[]
-  created_at: string
-  updated_at: string
+  category: Category
+  author: User
+  reviewer?: User | null
 }

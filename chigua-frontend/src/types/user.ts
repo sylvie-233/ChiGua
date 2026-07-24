@@ -1,11 +1,12 @@
-// 用户信息类型
+// 用户信息类型（对齐后端 UserResponse）
 export interface User {
   id: number
   username: string
   nickname: string
-  email: string
+  avatar: string
   role?: string
+  roles?: string[]
+  permissions?: string[]
   createdAt?: string
-  created_at?: string
-  updated_at?: string
+  updateAt?: string
 }

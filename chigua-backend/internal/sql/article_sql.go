@@ -100,6 +100,36 @@ SELECT
 FROM article
 `
 
+// ArticleCountByStatusAndCategory 按状态+分类统计文章数
+const ArticleCountByStatusAndCategory = `
+SELECT
+	COUNT(*)
+FROM article
+WHERE status = $1 AND category_id = $2
+`
+
+// ArticleSelectByStatusAndCategory 按状态+分类查询文章列表
+const ArticleSelectByStatusAndCategory = `
+SELECT
+	id,
+	author_id,
+	category_id,
+	title,
+	content,
+	cover_image,
+	status,
+	reviewer_id,
+	review_comment,
+	submitted_at,
+	publish_at,
+	created_at,
+	update_at
+FROM article
+WHERE status = $1 AND category_id = $2
+ORDER BY publish_at DESC
+LIMIT $3 OFFSET $4
+`
+
 // ArticleSelectRecent 查询最近发布的文章
 const ArticleSelectRecent = `
 SELECT a.id, a.title, u.username AS author_name, a.created_at

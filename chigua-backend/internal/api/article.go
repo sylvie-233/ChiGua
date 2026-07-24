@@ -43,7 +43,9 @@ func GetArticleList(c *gin.Context) {
 		pageSize = 10
 	}
 
-	articles, err := service.GetArticleList(page, pageSize)
+	categoryId, _ := strconv.ParseInt(c.DefaultQuery("categoryId", "0"), 10, 64)
+
+	articles, err := service.GetArticleList(page, pageSize, categoryId)
 	if err != nil {
 		c.JSON(int(model.InternalServerError), model.ErrorResponse(model.InternalServerError))
 		return

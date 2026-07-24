@@ -1,7 +1,7 @@
-// 标签类型
+// 标签类型（对齐后端 Tag）
 export interface Tag {
   id: number
   name: string
-  created_at: string
-  updated_at: string
+  createdAt: string
+  updateAt: string
 }

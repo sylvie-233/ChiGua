@@ -1,7 +1,9 @@
-// 分类类型
+// 分类类型（对齐后端 Category）
 export interface Category {
   id: number
   name: string
-  created_at: string
-  updated_at: string
+  description: string
+  sortOrder: number
+  createdAt: string
+  updateAt: string
 }

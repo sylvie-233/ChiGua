@@ -19,32 +19,15 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/views/ArticleDetailView.vue")
       },
       {
+        path: "category/:id",
+        name: "CategoryArticles",
+        component: () => import("@/views/CategoryArticlesView.vue")
+      },
+      {
         path: "profile",
         name: "Profile",
         component: () => import("@/views/ProfileView.vue"),
         meta: { requiresAuth: true }
-      }
-    ]
-  },
-  {
-    path: "/admin",
-    component: () => import("@/components/AdminLayout.vue"),
-    meta: { requiresAuth: true, requiresAdmin: true },
-    children: [
-      {
-        path: "article",
-        name: "AdminArticle",
-        component: () => import("@/views/admin/AdminArticle.vue")
-      },
-      {
-        path: "category",
-        name: "AdminCategory",
-        component: () => import("@/views/admin/AdminCategory.vue")
-      },
-      {
-        path: "tag",
-        name: "AdminTag",
-        component: () => import("@/views/admin/AdminTag.vue")
       }
     ]
   }
@@ -52,23 +35,18 @@ const routes: RouteRecordRaw[] = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior() {
+    return { top: 0 }
+  }
 })
 
 // 导航守卫
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore()
 
-  // 如果路由需要认证但用户未登录
   if (to.meta.requiresAuth && !authStore.isLoggedIn()) {
     message.error("请登录后访问")
-    next("/")
-    return
-  }
-
-  // 如果路由需要管理员权限
-  if (to.meta.requiresAdmin && authStore.user?.role !== "admin") {
-    message.error("无权限访问")
     next("/")
     return
   }

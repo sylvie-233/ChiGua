@@ -9,19 +9,19 @@ const CategoryCheckExists = `SELECT EXISTS(SELECT 1 FROM category WHERE name = $
 const CategoryCheckExistsExcludeID = `SELECT EXISTS(SELECT 1 FROM category WHERE name = $1 AND id != $2)`
 
 // CategorySelectByID 按ID查询分类
-const CategorySelectByID = `SELECT id, name, sort_order, created_at, update_at FROM category WHERE id = $1`
+const CategorySelectByID = `SELECT id, name, description, sort_order, created_at, update_at FROM category WHERE id = $1`
 
 // CategoryInsert 插入分类
-const CategoryInsert = `INSERT INTO category (name, sort_order, created_at, update_at) VALUES ($1, $2, $3, $4) RETURNING id`
+const CategoryInsert = `INSERT INTO category (name, description, sort_order, created_at, update_at) VALUES ($1, $2, $3, $4, $5) RETURNING id`
 
 // CategorySelectAll 查询所有分类
-const CategorySelectAll = `SELECT id, name, sort_order, created_at, update_at FROM category ORDER BY sort_order, id`
+const CategorySelectAll = `SELECT id, name, description, sort_order, created_at, update_at FROM category ORDER BY sort_order, id`
 
 // CategoryCountAll 统计所有分类数
 const CategoryCountAll = `SELECT COUNT(*) FROM category`
 
 // CategorySelectPaged 分页查询分类
-const CategorySelectPaged = `SELECT id, name, sort_order, created_at, update_at FROM category ORDER BY sort_order, id LIMIT $1 OFFSET $2`
+const CategorySelectPaged = `SELECT id, name, description, sort_order, created_at, update_at FROM category ORDER BY sort_order, id LIMIT $1 OFFSET $2`
 
 // CategoryCountAllByName 按名称关键词统计分类数
 const CategoryCountAllByName = `
@@ -32,7 +32,7 @@ WHERE name ILIKE '%' || $1 || '%'
 
 // CategorySelectPagedByName 按名称关键词分页查询分类
 const CategorySelectPagedByName = `
-SELECT id, name, sort_order, created_at, update_at
+SELECT id, name, description, sort_order, created_at, update_at
 FROM category
 WHERE name ILIKE '%' || $1 || '%'
 ORDER BY sort_order, id
@@ -43,4 +43,4 @@ LIMIT $2 OFFSET $3
 const CategoryDelete = `DELETE FROM category WHERE id = $1`
 
 // CategoryUpdate 更新分类
-const CategoryUpdate = `UPDATE category SET name = $1, sort_order = $2, update_at = $3 WHERE id = $4`
+const CategoryUpdate = `UPDATE category SET name = $1, description = $2, sort_order = $3, update_at = $4 WHERE id = $5`

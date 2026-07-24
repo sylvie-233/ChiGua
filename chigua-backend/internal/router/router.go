@@ -1,8 +1,8 @@
 package router
 
 import (
-	api "chigua-backend/internal/api"
 	admin "chigua-backend/internal/admin"
+	api "chigua-backend/internal/api"
 	"chigua-backend/internal/middleware"
 	"chigua-backend/internal/model"
 

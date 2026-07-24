@@ -26,7 +26,7 @@ const handleClick = () => {
 
 <template>
   <div
-    class="relative h-75 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
+    class="relative h-55 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
     @click="handleClick"
   >
     <!-- 图片区域 -->

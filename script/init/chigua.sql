@@ -285,6 +285,7 @@ DROP TABLE IF EXISTS category;
 CREATE TABLE category (
     id INT8 GENERATED ALWAYS AS IDENTITY,
     name VARCHAR(255) NOT NULL,
+    description TEXT DEFAULT '',
     sort_order INT4 DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -292,13 +293,19 @@ CREATE TABLE category (
 );
 COMMENT ON COLUMN category.id IS 'ID';
 COMMENT ON COLUMN category.name IS '分类名';
+COMMENT ON COLUMN category.description IS '分类描述';
 COMMENT ON COLUMN category.sort_order IS '排序';
 COMMENT ON COLUMN category.created_at IS '创建时间';
 COMMENT ON COLUMN category.update_at IS '更新时间';
 COMMENT ON TABLE category IS '分类表';
 
 -- 分类种子数据
-INSERT INTO category (name, sort_order) VALUES ('热点事件', 1), ('明星八卦', 2), ('社会民生', 3), ('科技数码', 4), ('奇闻趣事', 5);
+INSERT INTO category (name, description, sort_order) VALUES
+    ('热点事件', '国内外重大新闻、突发事件、时事热点追踪，第一时间掌握最新动态', 1),
+    ('明星八卦', '娱乐圈明星动态、绯闻爆料、综艺影视资讯，吃瓜群众的快乐源泉', 2),
+    ('社会民生', '社会新闻、民生百态、法制案例、真实故事，关注百姓生活', 3),
+    ('科技数码', '互联网前沿、数码产品评测、AI动态、科技创新资讯汇总', 4),
+    ('奇闻趣事', '世界之大无奇不有，奇闻异事、趣味科普、冷知识一网打尽', 5);
 
 DROP TABLE IF EXISTS article_review_record;
 CREATE TABLE article_review_record (

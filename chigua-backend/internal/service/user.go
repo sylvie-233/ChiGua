@@ -54,7 +54,11 @@ func LoginUser(login model.UserLogin) (*model.UserResponse, error) {
 		return nil, errors.New("用户名或密码错误")
 	}
 
-	return user.ToResponse(), nil
+	resp := user.ToResponse()
+	// 填充角色
+	roles, _ := GetUserRoles(user.ID)
+	resp.Roles = roles
+	return resp, nil
 }
 
 func GetUserByID(id int64) (*model.User, error) {

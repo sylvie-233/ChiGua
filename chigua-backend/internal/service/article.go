@@ -193,16 +193,27 @@ func GetAllArticleList(page, pageSize int, keyword string) (*model.ArticleList, 
 	return response, nil
 }
 
-func GetArticleList(page, pageSize int) (*model.ArticleList, error) {
+func GetArticleList(page, pageSize int, categoryId int64) (*model.ArticleList, error) {
 	var total int64
-	err := database.DB.Get(&total, sql.ArticleCountByStatus, model.ArticleStatusPublished)
-	if err != nil {
-		return nil, err
-	}
+	var articles []model.Article
+	var err error
 
 	offset := (page - 1) * pageSize
-	var articles []model.Article
-	err = database.DB.Select(&articles, sql.ArticleSelectByStatus, model.ArticleStatusPublished, pageSize, offset)
+
+	if categoryId > 0 {
+		err = database.DB.Get(&total, sql.ArticleCountByStatusAndCategory, model.ArticleStatusPublished, categoryId)
+		if err != nil {
+			return nil, err
+		}
+		err = database.DB.Select(&articles, sql.ArticleSelectByStatusAndCategory, model.ArticleStatusPublished, categoryId, pageSize, offset)
+	} else {
+		err = database.DB.Get(&total, sql.ArticleCountByStatus, model.ArticleStatusPublished)
+		if err != nil {
+			return nil, err
+		}
+		err = database.DB.Select(&articles, sql.ArticleSelectByStatus, model.ArticleStatusPublished, pageSize, offset)
+	}
+
 	if err != nil {
 		return nil, err
 	}

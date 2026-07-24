@@ -24,13 +24,14 @@ func CreateCategory(category model.CategoryCreate) (*model.Category, error) {
 
 	now := time.Now()
 	newCategory := model.Category{
-		Name:      category.Name,
-		SortOrder: category.SortOrder,
-		CreatedAt: now,
-		UpdateAt:  now,
+		Name:        category.Name,
+		Description: category.Description,
+		SortOrder:   category.SortOrder,
+		CreatedAt:   now,
+		UpdateAt:    now,
 	}
 
-	err = database.DB.QueryRow(sql.CategoryInsert, newCategory.Name, newCategory.SortOrder, newCategory.CreatedAt, newCategory.UpdateAt).Scan(&newCategory.ID)
+	err = database.DB.QueryRow(sql.CategoryInsert, newCategory.Name, newCategory.Description, newCategory.SortOrder, newCategory.CreatedAt, newCategory.UpdateAt).Scan(&newCategory.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +39,7 @@ func CreateCategory(category model.CategoryCreate) (*model.Category, error) {
 	return &newCategory, nil
 }
 
-func UpdateCategory(id int64, name string, sortOrder int) (*model.Category, error) {
+func UpdateCategory(id int64, name string, description string, sortOrder int) (*model.Category, error) {
 	var exists bool
 	err := database.DB.QueryRow(sql.CategoryCheckExistsExcludeID, name, id).Scan(&exists)
 	if err != nil {
@@ -49,7 +50,7 @@ func UpdateCategory(id int64, name string, sortOrder int) (*model.Category, erro
 	}
 
 	now := time.Now()
-	_, err = database.DB.Exec(sql.CategoryUpdate, name, sortOrder, now, id)
+	_, err = database.DB.Exec(sql.CategoryUpdate, name, description, sortOrder, now, id)
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,5 @@
 import { typedApi } from "./client"
+import api from "./client"
 import type { User } from "@/types/user"
 
 export interface LoginResponse {
@@ -28,5 +29,16 @@ export const userApi = {
 
   async updateProfile(data: Partial<User>) {
     return typedApi.put<string>("/user/me", data)
+  },
+
+  async updateAvatar(avatar: string) {
+    return typedApi.put<string>("/user/avatar", { avatar })
+  },
+
+  async uploadFile(file: File) {
+    const formData = new FormData()
+    formData.append("file", file)
+    const response = await api.post("/upload/file", formData)
+    return response as any
   }
 }
